@@ -1,39 +1,50 @@
-#ifndef CGHALFEDGETRIANGLEMESH_H
-#define CGHALFEDGETRIANGLEMESH_H
+#ifndef CG_HALF_EDGE_TRIANGLE_MESH_H
+#define CG_HALF_EDGE_TRIANGLE_MESH_H
+
+#include <unordered_map>
 
 #include "cgbasehalfedgetrianglemesh.h"
 #include "cghalfedgeprimitives.h"
 
 #include <vector>
 #include <glm/glm.hpp>
-#include <string>
+
+
+struct PairHash {
+    size_t operator()(const std::pair<int,int>& p) const {
+        const size_t h1 = std::hash<int>()(p.first);
+        const size_t h2 = std::hash<int>()(p.second);
+        return h1 ^ h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2);
+    }
+};
 
 class CgHalfEdgeTriangleMesh : public CgBaseHalfEdgeTriangleMesh
 {
 public:
-    CgHalfEdgeTriangleMesh();
-    CgHalfEdgeTriangleMesh(std::vector<glm::vec3>& verts,std::vector<glm::vec3>& norm,std::vector<unsigned int>& idx);
+    CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& vertices,std::vector<glm::vec3>& normals, const std::vector<unsigned int>& face_indices);
 
-    ~CgHalfEdgeTriangleMesh();
+    ~CgHalfEdgeTriangleMesh() override;
 
     //inherited from CgBaseRenderableObject
-    ObjectType getType() const;
-    unsigned int getID() const;
-    glm::vec3 getColor() const;
+    ObjectType getType() const override;
+    unsigned int getID() const override;
+    glm::vec3 getColor() const override;
 
     
     //inherited from CgBaseHalfEdgeTriangleMesh
 
-    const std::vector<CgBaseHeFace*>& getFaces() const;
+    const std::vector<CgBaseHeFace*>& getFaces() const override;
 
     //own stuff
     const glm::vec3 getCenter() const;
 
 
 private:
-
+    CgHeVert* createVertex(int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
+    std::pair<CgHeEdge*, CgHeEdge*> createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
+    void integrityCheck();
     std::vector<CgBaseHeFace*> m_faces;
-    std::vector<CgBaseHeVert*> m_verts;
+    std::vector<CgBaseHeVert*> m_vertices;
     std::vector<CgBaseHeEdge*> m_edges;
 
 
@@ -41,7 +52,7 @@ private:
     const unsigned int m_id;
 
     // if no material is used
-    glm::vec3 m_color{};
+    glm::vec3 m_color{1,0,0};
     
 };
 
@@ -51,4 +62,4 @@ inline unsigned int CgHalfEdgeTriangleMesh::getID() const {return m_id;}
 inline glm::vec3 CgHalfEdgeTriangleMesh::getColor() const {return m_color;}
 
 
-#endif // CGHALFEDGETRIANGLEMESH_H
+#endif // CG_HALF_EDGE_TRIANGLE_MESH_H

@@ -1,101 +1,155 @@
 #include "cghalfedgetrianglemesh.h"
 
+#include <iostream>
+#include <ostream>
 
 extern int getUniqueId();
 
-
-CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh() :
+CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals, const std::vector<unsigned int>& face_indices) :
     m_type(HalfEdgeTriangleMesh),
     m_id(getUniqueId())
 {
-    CgHeFace* nf1 = new CgHeFace();
-    CgHeFace* nf2 = new CgHeFace();
 
-    CgHeVert* nv1 = new CgHeVert();
-    CgHeVert* nv2 = new CgHeVert();
-    CgHeVert* nv3 = new CgHeVert();
-    CgHeVert* nv4 = new CgHeVert();
+    std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash> halfEdges;
+    std::unordered_map<int, CgHeVert*> halfEdgeVertices;
 
-    CgHeEdge* n1 = new CgHeEdge();
-    CgHeEdge* n2 = new CgHeEdge();
-    CgHeEdge* n3 = new CgHeEdge();
-    CgHeEdge* n4 = new CgHeEdge();
-    CgHeEdge* n5 = new CgHeEdge();
-    CgHeEdge* n6 = new CgHeEdge();
+    for (int i = 0; i < face_indices.size(); i+=3)
+    {
+        int v0i = face_indices[i];
+        int v1i = face_indices[i+1];
+        int v2i = face_indices[i+2];
+        createVertex(v0i, vertices, halfEdgeVertices);
+        createVertex(v1i, vertices, halfEdgeVertices);
+        createVertex(v2i, vertices, halfEdgeVertices);
+
+        CgHeFace* face = new CgHeFace();
+        std::pair<CgHeEdge*, CgHeEdge*> pair = createEdge({v0i, v1i}, halfEdges, halfEdgeVertices);
+        CgHeEdge* edgeOneForward = pair.first;
+        CgHeEdge* edgeOneBackward = pair.second;
+
+        pair = createEdge({v1i, v2i}, halfEdges, halfEdgeVertices);
+        CgHeEdge* edgeTwoForward = pair.first;
+        CgHeEdge* edgeTwoBackward = pair.second;
 
 
-    n1->m_next = n2;
-    n2->m_next = n3;
-    n3->m_next = n1;
-    nf1->m_edge = n1;
+        pair = createEdge({v2i, v0i}, halfEdges, halfEdgeVertices);
+        CgHeEdge* edgeThreeForward = pair.first;
+        CgHeEdge* edgeThreeBackward = pair.second;
 
-    n4->m_next = n5;
-    n5->m_next = n6;
-    n6->m_next = n4;
-    nf2->m_edge = n4;
+        edgeOneForward->m_face = face;
+        edgeOneBackward->m_face = face;
 
-    nv1->m_position = glm::vec3(0.0, 0.0, 0.0);
-    nv2->m_position = glm::vec3(0.5, 0.0, 0.0);
-    nv3->m_position = glm::vec3(0.5, 0.5, 0.0);
-    nv4->m_position = glm::vec3(0.0, 0.5, 0.0);
+        edgeOneForward->m_next = edgeTwoForward;
+        edgeTwoForward->m_next = edgeThreeForward;
+        edgeThreeForward->m_next = edgeOneForward;
 
-    nv1->m_edge = n1;
-    nv2->m_edge = n2;
-    nv3->m_edge = n6;
-    nv4->m_edge = n3;
+        edgeOneBackward->m_next = edgeThreeBackward;
+        edgeThreeBackward->m_next = edgeTwoBackward;
+        edgeTwoBackward->m_next = edgeOneBackward;
 
-    n4->m_vert = nv4;
-    n5->m_vert = nv2;
-    n6->m_vert = nv3;
-
-    n1->m_vert = nv1;
-    n2->m_vert = nv2;
-    n3->m_vert = nv4;
-
-    n2->m_pair = n4;
-    n4->m_pair = n2;
-
-    // store into lists
-    m_faces.push_back(nf1);
-    m_faces.push_back(nf2);
-
-    m_verts.push_back(nv1);
-    m_verts.push_back(nv2);
-    m_verts.push_back(nv3);
-    m_verts.push_back(nv4);
-
-    m_edges.push_back(n1);
-    m_edges.push_back(n2);
-    m_edges.push_back(n3);
-    m_edges.push_back(n4);
-    m_edges.push_back(n5);
-    m_edges.push_back(n6);
-
-    //attributes
-    nv1->m_color = glm::vec3(0.0, 1.0, 0.0);
-    nv2->m_color = glm::vec3(0.0, 1.0, 0.0);
-    nv3->m_color = glm::vec3(0.0, 1.0, 0.0);
-    nv4->m_color = glm::vec3(0.0, 1.0, 0.0);
-
-    nf1->m_normal = glm::vec3(0.0, 0.0, 1.0);
-    nf2->m_normal = glm::vec3(0.0, 0.0, 1.0);
+        face->m_edge = edgeOneForward;
+        glm::vec3& v0 = normals[v0i];
+        glm::vec3& v1 = normals[v1i];
+        glm::vec3& v2 = normals[v2i];
+        face->m_normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+        this->m_faces.push_back(face);
+    }
+    this->integrityCheck();
 }
 
-CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(std::vector<glm::vec3>& verts, std::vector<glm::vec3>& norm,
-                                               std::vector<unsigned int>& idx) : CgHalfEdgeTriangleMesh()
+CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices)
 {
-    // data ignored at the moment
-    // to be implemented .... :-)
-    // calling standard constructor instead for simple example
+    if (halfEdgeVertices[index] == nullptr)
+    {
+        halfEdgeVertices[index] = new CgHeVert();
+        halfEdgeVertices[index]->m_color = glm::vec3(1, 0, 0);
+        halfEdgeVertices[index]->m_position = vertices[index];
+        this->m_vertices.push_back(halfEdgeVertices[index]);
+    }
+    return halfEdgeVertices[index];
+}
+
+std::pair<CgHeEdge*, CgHeEdge*> CgHalfEdgeTriangleMesh::createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices)
+{
+    if (halfEdges[edge_vertices] != nullptr)
+    {
+        return {halfEdges[edge_vertices], halfEdges[edge_vertices]->m_pair};
+    }
+    CgHeEdge* edge = new CgHeEdge();
+    CgHeEdge* reversed_edge = new CgHeEdge();
+    edge->m_pair = reversed_edge;
+    reversed_edge->m_pair = edge;
+    halfEdges[edge_vertices] = edge;
+    halfEdges[{edge_vertices.second, edge_vertices.first}] = reversed_edge;
+
+    edge->m_vert = halfEdgeVertices[edge_vertices.first];
+    edge->m_vert->m_edge = edge;
+    reversed_edge->m_vert = halfEdgeVertices[edge_vertices.second];
+    reversed_edge->m_vert->m_edge = reversed_edge;
+
+    this->m_edges.push_back(edge);
+    this->m_edges.push_back(reversed_edge);
+    return {edge, reversed_edge};
+}
+
+void CgHalfEdgeTriangleMesh::integrityCheck()
+{
+    for (int i = 0; i < this->m_faces.size(); ++i)
+    {
+        const CgBaseHeFace* face = this->m_faces[i];
+        if (face->normal() == glm::vec3{})
+        {
+            std::cout << "face " << i << " normal invalid" << std::endl;
+            return;
+        }
+
+        //check loop
+        const CgBaseHeEdge* edge = face->edge();
+        if (edge == nullptr)
+        {
+            std::cout << "face " << i << " edge null" << std::endl;
+            return;
+        }
+        const CgBaseHeEdge* next_edge = edge->next();
+        if (next_edge == nullptr)
+        {
+            std::cout << "face " << i << " next edge null" << std::endl;
+            return;
+        }
+        const CgBaseHeEdge* next_next_edge = next_edge->next();
+        if (next_next_edge == nullptr || next_next_edge->next() != edge)
+        {
+            std::cout << "face " << i << " edge loop invalid" << std::endl;
+        }
+
+        //check reverse loop
+        const CgBaseHeEdge* pair_edge = edge->pair();
+        if (pair_edge == nullptr)
+        {
+            std::cout << "face " << i << " edge null" << std::endl;
+            return;
+        }
+        const CgBaseHeEdge* next_pair_edge = edge->next();
+        if (next_pair_edge == nullptr)
+        {
+            std::cout << "face " << i << " next edge null" << std::endl;
+            return;
+        }
+        const CgBaseHeEdge* next_next_pair_edge = next_edge->next();
+        if (next_next_pair_edge == nullptr || next_next_pair_edge->next() != pair_edge)
+        {
+            std::cout << "face " << i << " edge loop invalid" << std::endl;
+        }
+    }
 }
 
 
 CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh()
 {
-    // thats not enough, have to kill Objects as well´
+    // that's not enough, have to kill Objects as well´
     m_faces.clear();
     m_edges.clear();
-    m_verts.clear();
+    m_vertices.clear();
 }
 
 const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const
@@ -106,10 +160,10 @@ const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const
 const glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const
 {
     glm::vec3 center(0.);
-    for (const auto m_vert : m_verts)
+    for (const auto m_vert : m_vertices)
     {
         center += m_vert->position();
     }
-    center /= static_cast<double>(m_verts.size());
+    center /= static_cast<double>(m_vertices.size());
     return center;
 }

@@ -19,7 +19,7 @@ class CgOpenGLRenderingGui : public CgBaseGui
 {
 public:
  // constructors / destructor
- CgOpenGLRenderingGui(const std::string& current_path);
+ explicit CgOpenGLRenderingGui(const std::string& current_path);
  CgOpenGLRenderingGui();
  ~CgOpenGLRenderingGui() override;
 

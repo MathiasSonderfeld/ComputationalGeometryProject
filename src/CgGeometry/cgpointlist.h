@@ -1,9 +1,8 @@
-#ifndef CG_POLYLINE_H
-#define CG_POLYLINE_H
+#ifndef CG_POINT_LIST_H
+#define CG_POINT_LIST_H
 
 #include <vector>
 #include <glm/glm.hpp>
-#include <string>
 #include "cgbasepointlist.h"
 
 
@@ -12,23 +11,23 @@ class CgPointList : public CgBasePointList
 
 public:
     CgPointList();
-    CgPointList(std::vector<glm::vec3>& verts);
+    explicit CgPointList(std::vector<glm::vec3>& vertices);
     
-    ~CgPointList();
+    ~CgPointList() override;
 
     //inherited from CgBaseRenderableObject
-    ObjectType getType() const;
-    unsigned int getID() const;
-    glm::vec3 getColor() const;
+    ObjectType getType() const override;
+    unsigned int getID() const override;
+    glm::vec3 getColor() const override;
    
     void initTestGeometry();
 
     //inherited from CgBasePointList
-    const std::vector<glm::vec3>& getVertices() const;
-    const int getLineWidth() const;
+    const std::vector<glm::vec3>& getVertices() const override;
+    const int getLineWidth() const override;
     
-    void setLineStyle(LineStyle newVal);
-    const LineStyle getLineStyle() const;
+    void setLineStyle(LineStyle newVal) override;
+    const LineStyle getLineStyle() const override;
   
     void setLineWidth(int);
     

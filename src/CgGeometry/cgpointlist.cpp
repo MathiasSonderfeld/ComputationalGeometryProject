@@ -1,7 +1,4 @@
 #include "cgpointlist.h"
-#include <iostream>
-
-
 
 extern int getUniqueId();
 
@@ -15,7 +12,7 @@ m_id(getUniqueId())
     initTestGeometry();
 }
 
-CgPointList::CgPointList(std::vector<glm::vec3>& verts):
+CgPointList::CgPointList(std::vector<glm::vec3>& vertices):
 m_linewidth(1),
 m_line_style(CG_POINTS),
 m_type(PointList),
@@ -24,8 +21,8 @@ m_id(getUniqueId())
     m_color = glm::vec3(0.0,0.0,1.0);
     m_vertices.clear();
     
-    for(int i=0;i<verts.size();i++)
-        m_vertices.push_back(glm::vec3(verts[i]));
+    for(auto & vertice : vertices)
+        m_vertices.emplace_back(vertice);
 }
 
 CgPointList::~CgPointList()
@@ -35,10 +32,10 @@ CgPointList::~CgPointList()
 
 void CgPointList::initTestGeometry()
 {
-    m_vertices.push_back(glm::vec3(-0.5,0.0,0.0));
-    m_vertices.push_back(glm::vec3(0.0,-0.5,0.0));
-    m_vertices.push_back(glm::vec3(0.0,0.5,0.0));
-    m_vertices.push_back(glm::vec3(0.5,0.0,0.0));
+    m_vertices.emplace_back(-0.5,0.0,0.0);
+    m_vertices.emplace_back(0.0,-0.5,0.0);
+    m_vertices.emplace_back(0.0,0.5,0.0);
+    m_vertices.emplace_back(0.5,0.0,0.0);
 }
 
 
@@ -53,12 +50,12 @@ const int CgPointList::getLineWidth() const
     return m_linewidth;
 }
 
-void CgPointList::setLineWidth(int newVal)
+void CgPointList::setLineWidth(const int newVal)
 {
     m_linewidth=newVal;
 }
 
-void CgPointList::setLineStyle(LineStyle newVal)
+void CgPointList::setLineStyle(const LineStyle newVal)
 {
     m_line_style=newVal;
 }

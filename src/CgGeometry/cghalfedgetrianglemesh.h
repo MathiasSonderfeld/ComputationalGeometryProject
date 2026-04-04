@@ -41,7 +41,7 @@ private:
     const unsigned int m_id;
 
     // if no material is used
-    glm::vec3 m_color;
+    glm::vec3 m_color{};
     
 };
 

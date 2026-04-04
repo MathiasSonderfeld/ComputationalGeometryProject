@@ -1,8 +1,8 @@
-#ifndef CGHALFEDGEPRIMITIVES_H
-#define CGHALFEDGEPRIMITIVES_H
+#ifndef CG_HALF_EDGE_PRIMITIVES_H
+#define CG_HALF_EDGE_PRIMITIVES_H
 
 #include <glm/glm.hpp>
-#include "cgbasehalfdgeprimitives.h"
+#include "cgbasehalfedgeprimitives.h"
 
 //forward declaration
 class CgHeVert;
@@ -12,61 +12,50 @@ class CgHeFace : public CgBaseHeFace
 {
 public:
     CgHeFace();
-    ~CgHeFace();
+    ~CgHeFace() override;
 
-    const CgBaseHeEdge* edge() const;
-    const glm::vec3 normal() const;
+    const CgBaseHeEdge* edge() const override;
+    const glm::vec3 normal() const override;
 
     CgHeEdge* m_edge;
 
-    glm::vec3 m_normal;
-
-
+    glm::vec3 m_normal{};
 };
-
-
-
 
 
 class CgHeVert : public CgBaseHeVert
 {
 public:
     CgHeVert();
-    ~CgHeVert();
+    ~CgHeVert() override;
 
-    const CgBaseHeEdge* edge() const;
-    const glm::vec3 position() const;
-    const glm::vec3 color() const;
+    const CgBaseHeEdge* edge() const override;
+    const glm::vec3 position() const override;
+    const glm::vec3 color() const override;
 
 
     CgHeEdge* m_edge;
-    glm::vec3 m_position;
-    glm::vec3 m_color;
-
+    glm::vec3 m_position{};
+    glm::vec3 m_color{};
 };
 
 class CgHeEdge : public CgBaseHeEdge
 {
-
 public:
-
     CgHeEdge();
-    ~CgHeEdge();
+    ~CgHeEdge() override;
 
-    const CgBaseHeEdge* next() const;
-    const CgBaseHeEdge* pair() const;
-    const CgBaseHeVert* vert() const;
-    const CgBaseHeFace* face() const;
+    const CgBaseHeEdge* next() const override;
+    const CgBaseHeEdge* pair() const override;
+    const CgBaseHeVert* vert() const override;
+    const CgBaseHeFace* face() const override;
 
 
     CgHeEdge* m_next;
     CgHeEdge* m_pair;
     CgHeVert* m_vert;
     CgHeFace* m_face;
-
 };
 
 
-
-
-#endif // CGHALFEDGEPRIMITIVES_H
+#endif // CG_HALF_EDGE_PRIMITIVES_H

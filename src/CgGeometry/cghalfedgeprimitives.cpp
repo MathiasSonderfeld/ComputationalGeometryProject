@@ -2,40 +2,34 @@
 
 CgHeFace::CgHeFace()
 {
-    m_edge=NULL;
+    m_edge=nullptr;
 }
 
 CgHeVert::CgHeVert()
 {
-    m_edge=NULL;
+    m_edge=nullptr;
 }
 
 CgHeEdge::CgHeEdge()
 {
-    m_next=NULL;
-    m_pair=NULL;
-    m_vert=NULL;
-    m_face=NULL;
+    m_next=nullptr;
+    m_pair=nullptr;
+    m_vert=nullptr;
+    m_face=nullptr;
 }
 
 CgHeEdge::~CgHeEdge()
-{
-
-}
+= default;
 
 CgHeVert::~CgHeVert()
-{
-
-}
+= default;
 
 CgHeFace::~CgHeFace()
-{
-
-}
+= default;
 
 const CgBaseHeEdge* CgHeFace::edge() const
 {
-    return (CgBaseHeEdge*) m_edge;
+    return static_cast<CgBaseHeEdge*>(m_edge);
 }
 
 const glm::vec3 CgHeFace::normal() const
@@ -45,28 +39,28 @@ const glm::vec3 CgHeFace::normal() const
 
 const CgBaseHeVert* CgHeEdge::vert() const
 {
-    return (CgBaseHeVert*) m_vert;
+    return static_cast<CgBaseHeVert*>(m_vert);
 }
 
 const CgBaseHeEdge* CgHeEdge::next() const
 {
-    return (CgBaseHeEdge*) m_next;
+    return static_cast<CgBaseHeEdge*>(m_next);
 }
 
 const CgBaseHeEdge* CgHeEdge::pair() const
 {
-    return (CgBaseHeEdge*) m_pair;
+    return static_cast<CgBaseHeEdge*>(m_pair);
 }
 
 const CgBaseHeFace* CgHeEdge::face() const
 {
-    return (CgBaseHeFace*) m_face;
+    return static_cast<CgBaseHeFace*>(m_face);
 }
 
 
 const CgBaseHeEdge* CgHeVert::edge() const
 {
-    return (CgBaseHeEdge*) m_edge;
+    return static_cast<CgBaseHeEdge*>(m_edge);
 }
 
 const glm::vec3 CgHeVert::position() const

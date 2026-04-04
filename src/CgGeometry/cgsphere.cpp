@@ -4,14 +4,14 @@
 
 extern int getUniqueId();
 
-CgSphere::CgSphere():CgTriangleMesh()
+CgSphere::CgSphere()
 {
     m_center=glm::vec3(0.0,0.0,0.0);
     m_radius=0.0f;
     
 }
 
-CgSphere::CgSphere(glm::vec3 center, double radius):CgTriangleMesh()
+CgSphere::CgSphere(const glm::vec3 center, const double radius)
 {
     m_center=center;
     m_radius=radius;
@@ -21,15 +21,13 @@ CgSphere::CgSphere(glm::vec3 center, double radius):CgTriangleMesh()
 
 
 CgSphere::~CgSphere()
-{
-    
-}
+= default;
 
-glm::vec3 CgSphere::getCenter()
+glm::vec3 CgSphere::getCenter() const
 {
     return m_center;
 }
-void CgSphere::setCenter(glm::vec3 c)
+void CgSphere::setCenter(const glm::vec3 c)
 {
     m_center=c;
     createTrianglesForSphere(16, 16);
@@ -37,16 +35,16 @@ void CgSphere::setCenter(glm::vec3 c)
 
 bool CgSphere::hasIntersection (const glm::vec3& origin, const glm::vec3& dir, const double maxDistance) const
     {
-        glm::vec3 m = origin-m_center;
-        float temp = glm::dot(m,m);
-        float c = temp-(m_radius*m_radius);
+        const glm::vec3 m = origin-m_center;
+        const float temp = glm::dot(m,m);
+        const float c = temp-(m_radius*m_radius);
         //if there is at least one real root, there must be an intersection
         if(c<=0.0f) return true;
-        float b = glm::dot(dir,m);
+        const float b = glm::dot(dir,m);
 
         // exit if outside and pointing away
         if(b>=0.0f) return false;
-        float disc = b*b-c;
+        const float disc = b*b-c;
 
         // neagtive discriminant means missing
         if(disc<0.0f) return false;
@@ -54,9 +52,6 @@ bool CgSphere::hasIntersection (const glm::vec3& origin, const glm::vec3& dir, c
         std::cout <<  "intersction found in object: #" << this->getID() << std::endl;
         return true;
     }
-
-
-
 
 
 void CgSphere::createTrianglesForSphere(int sectors, int rings)

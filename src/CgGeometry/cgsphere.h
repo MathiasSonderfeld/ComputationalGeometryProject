@@ -18,7 +18,7 @@ public:
     
     ~CgSphere();
     
-    glm::vec3 getCenter();
+    glm::vec3 getCenter() const;
     void setCenter(glm::vec3 c);
 
     //overload triangular calculation

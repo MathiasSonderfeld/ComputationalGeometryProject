@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "cgbaserenderableobject.h"
-#include "cgbasehalfdgeprimitives.h"
+#include "cgbasehalfedgeprimitives.h"
 
 class CgBaseHalfEdgeTriangleMesh : public CgBaseRenderableObject
 {

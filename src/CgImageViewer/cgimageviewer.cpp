@@ -26,22 +26,22 @@ void CgImageViewer::initGUI()
     
 }
 
-void CgImageViewer::showGUI(int windowsize_x, int windowsize_y)
+void CgImageViewer::showGUI(int window_size_x, int window_size_y)
 {
     //Load and show test Image
     ImGui::SetNextWindowPos(ImVec2(10,10));
-    ImGui::SetNextWindowSize(ImVec2(windowsize_x/2-20,windowsize_y-20));
+    ImGui::SetNextWindowSize(ImVec2(window_size_x/2-20,window_size_y-20));
     createTestImageView();
    
     if(show_demo_window)
     {
-        ImGui::SetNextWindowPos(ImVec2(windowsize_x/2+10,10));
-        ImGui::SetNextWindowSize(ImVec2(windowsize_x/2-20,windowsize_y/3));
+        ImGui::SetNextWindowPos(ImVec2(window_size_x/2+10,10));
+        ImGui::SetNextWindowSize(ImVec2(window_size_x/2-20,window_size_y/3));
     }
     else
     {
-        ImGui::SetNextWindowPos(ImVec2(windowsize_x/2+10,10));
-        ImGui::SetNextWindowSize(ImVec2(windowsize_x/2-20,windowsize_y-20));
+        ImGui::SetNextWindowPos(ImVec2(window_size_x/2+10,10));
+        ImGui::SetNextWindowSize(ImVec2(window_size_x/2-20,window_size_y-20));
     }
     
     // create gui for all exercises, see mygui.h for details
@@ -49,8 +49,8 @@ void CgImageViewer::showGUI(int windowsize_x, int windowsize_y)
     
     // Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()!
     // You can browse its code to learn more about Dear ImGui!).
-    ImGui::SetNextWindowPos(ImVec2(windowsize_x/2+10,windowsize_y/3+20));
-    ImGui::SetNextWindowSize(ImVec2(windowsize_x/2-20,windowsize_y/3*2-30));
+    ImGui::SetNextWindowPos(ImVec2(window_size_x/2+10,window_size_y/3+20));
+    ImGui::SetNextWindowSize(ImVec2(window_size_x/2-20,window_size_y/3*2-30));
     if(show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
     ImGui::Render();

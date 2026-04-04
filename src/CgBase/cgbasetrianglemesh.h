@@ -1,5 +1,5 @@
-#ifndef CGBASETRIANGLEMESH_H
-#define CGBASETRIANGLEMESH_H
+#ifndef CG_BASE_TRIANGLE_MESH_H
+#define CG_BASE_TRIANGLE_MESH_H
 
 
 #include <vector>
@@ -9,11 +9,9 @@
 class CgBaseTriangleMesh : public CgBaseRenderableObject
 {
 public:
+    ~CgBaseTriangleMesh() override = default;
 
-    virtual ~CgBaseTriangleMesh(){};
-
-
-    virtual const std::vector<glm::vec3>& getVertices()     const =0;
+    virtual const std::vector<glm::vec3>& getVertices() const =0;
     virtual const std::vector<glm::vec3>& getVertexNormals() const =0;
     virtual const std::vector<glm::vec3>& getVertexColors() const =0;
 
@@ -27,12 +25,9 @@ public:
 
     // Falls eine Farbe pro Polygon spezifiziert ist, so ist es einfarbig in genau dieser Farbe, also auch #Farben=#Faces
     virtual const std::vector<glm::vec3>& getFaceColors() const =0;
-    
-    // given a ray with origin and dir: check if an intersection exists
-    virtual bool hasIntersection (const glm::vec3& origin, const glm::vec3& dir, const double maxDistance) const=0;
 
+    // given a ray with origin and dir: check if an intersection exists
+    virtual bool hasIntersection(const glm::vec3& origin, const glm::vec3& dir, double maxDistance) const =0;
 };
 
-
-
-#endif // CGBASETRIANGLEMESH_H
+#endif // CG_BASE_TRIANGLE_MESH_H

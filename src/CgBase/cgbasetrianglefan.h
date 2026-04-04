@@ -1,5 +1,5 @@
-#ifndef CGBASETRIANGLEFAN_H
-#define CGBASETRIANGLEFAN_H
+#ifndef CG_BASE_TRIANGLE_FAN_H
+#define CG_BASE_TRIANGLE_FAN_H
 
 
 #include <vector>
@@ -9,11 +9,8 @@
 class CgBaseTriangleFan : public CgBaseRenderableObject
 {
 public:
-
-    virtual ~CgBaseTriangleFan(){};
-    virtual const std::vector<glm::vec3>& getVertices()     const =0;
+    ~CgBaseTriangleFan() override = default;
+    virtual const std::vector<glm::vec3>& getVertices() const =0;
 };
 
-
-
-#endif // CGBASETRIANGLEFAN_H
+#endif // CG_BASE_TRIANGLE_FAN_H

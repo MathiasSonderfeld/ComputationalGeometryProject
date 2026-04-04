@@ -1,24 +1,16 @@
-#ifndef CGBASE_HALFEDGE_TRIANGLEMESH_H
-#define CGBASE_HALFEDGE_TRIANGLEMESH_H
+#ifndef CG_BASE_HALF_EDGE_TRIANGLE_MESH_H
+#define CG_BASE_HALF_EDGE_TRIANGLE_MESH_H
 
 
 #include <vector>
-#include <glm/glm.hpp>
 #include "cgbaserenderableobject.h"
 #include "cgbasehalfdgeprimitives.h"
-
-
-
-
 
 class CgBaseHalfEdgeTriangleMesh : public CgBaseRenderableObject
 {
 public:
-    virtual ~CgBaseHalfEdgeTriangleMesh(){};
-
-
-    virtual const std::vector<CgBaseHeFace*>& getFaces()     const =0;
-
+    ~CgBaseHalfEdgeTriangleMesh() override = default;
+    virtual const std::vector<CgBaseHeFace*>& getFaces() const =0;
 };
 
-#endif // CGBASE_HALFEDGE_TRIANGLEMESH_H
+#endif // CG_BASE_HALF_EDGE_TRIANGLE_MESH_H

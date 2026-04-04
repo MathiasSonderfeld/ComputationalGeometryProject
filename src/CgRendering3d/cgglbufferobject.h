@@ -2,35 +2,28 @@
 #define CG_GL_BUFFER_OBJECT
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include "vertexholder.h"
 #include <vector>
 
 class CgBaseRenderableObject;
 
 
-class CgGLBufferObject {
-    
-    
+class CgGLBufferObject
+{
 public:
-
     CgGLBufferObject();
     ~CgGLBufferObject();
-    
-    void renderObject(CgBaseRenderableObject* obj);
-   
-    
+
+    void renderObject(CgBaseRenderableObject* obj) const;
+
     void create_vertex_index_buffers(const std::vector<VertexHolder>& vertices,
-                                     std::vector<unsigned int>& indices);
+                                     const std::vector<unsigned int>& indices);
     void create_vertex_buffers(const std::vector<VertexHolder>& vertices);
-   
-    
+
 private:
-    
-    GLuint mVBO;
-    GLuint mVAO;
-    GLuint mIBO;
-    
+    GLuint mVBO{};
+    GLuint mVAO{};
+    GLuint mIBO{};
 };
 
 

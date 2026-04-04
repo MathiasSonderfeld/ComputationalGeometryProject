@@ -29,7 +29,7 @@ int main(const int argc, char** argv)
         window_size_y = static_cast<int>(strtol(argv[2], nullptr, 10));
     }
 
-    CgGLFWwindow main_window;
+    CgGlfwWindow main_window;
     main_window.init(window_size_x, window_size_y);
 
     // setup Gui for OpenGL Rendering

@@ -1,6 +1,6 @@
 #define GL_SILENCE_DEPRECATION
 
-#include "cgglfwwindow.h"
+#include "CgGlfwWindow.h"
 
 #include <string>
 #include <iostream>
@@ -16,12 +16,12 @@ extern int window_size_x;
 extern int window_size_y;
 
 
-void CgGLFWwindow::glfw_error_callback(const int error, const char* description)
+void CgGlfwWindow::glfw_error_callback(const int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-void CgGLFWwindow::glfw_window_size_callback(GLFWwindow*, const int size_x, const int size_y)
+void CgGlfwWindow::glfw_window_size_callback(GLFWwindow*, const int size_x, const int size_y)
 {
     if (window_size_x != size_x || window_size_y != size_y)
     {
@@ -30,10 +30,10 @@ void CgGLFWwindow::glfw_window_size_callback(GLFWwindow*, const int size_x, cons
     }
 }
 
-CgGLFWwindow::CgGLFWwindow()
+CgGlfwWindow::CgGlfwWindow()
 = default;
 
-CgGLFWwindow::~CgGLFWwindow()
+CgGlfwWindow::~CgGlfwWindow()
 {
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
@@ -44,7 +44,7 @@ CgGLFWwindow::~CgGLFWwindow()
     glfwTerminate();
 }
 
-void CgGLFWwindow::init(const int size_x, const int size_y)
+void CgGlfwWindow::init(const int size_x, const int size_y)
 {
     window_size_x = size_x;
     window_size_y = size_y;
@@ -82,7 +82,7 @@ void CgGLFWwindow::init(const int size_x, const int size_y)
     std::cout << glsl_version << std::endl;
 
     window = glfwCreateWindow(window_size_x, window_size_y, "Computergrafik - Übung", nullptr, nullptr);
-    glfwSetWindowSizeCallback(window, CgGLFWwindow::glfw_window_size_callback);
+    glfwSetWindowSizeCallback(window, CgGlfwWindow::glfw_window_size_callback);
 
     if (window == nullptr)
         return;
@@ -122,13 +122,13 @@ void CgGLFWwindow::init(const int size_x, const int size_y)
     clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 }
 
-void CgGLFWwindow::setGui(CgBaseGui* gui)
+void CgGlfwWindow::setGui(CgBaseGui* gui)
 {
     myGui = gui;
     myGui->initGUI();
 }
 
-void CgGLFWwindow::show() const
+void CgGlfwWindow::show() const
 {
     // Main loop
     while (!glfwWindowShouldClose(window))

@@ -15,11 +15,11 @@
 class CgBaseGui;
 
 
-class CgGLFWwindow
+class CgGlfwWindow
 {
 public:
-    CgGLFWwindow();
-    ~CgGLFWwindow();
+    CgGlfwWindow();
+    ~CgGlfwWindow();
 
     void init(int, int);
     void setGui(CgBaseGui* gui);

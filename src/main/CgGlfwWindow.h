@@ -2,14 +2,9 @@
 #define CG_GLFW_WINDOW_H
 
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-
-//#if defined(IMGUI_IMPL_OPENGL_ES2)
-//#include <GLES2/gl2.h>
-//#endif
-
-
 #include "imgui.h"
 
 class CgBaseGui;

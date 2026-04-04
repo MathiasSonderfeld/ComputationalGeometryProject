@@ -15,27 +15,24 @@
 class CgBaseGui;
 
 
-
-class CgGLFWwindow{
-
+class CgGLFWwindow
+{
 public:
-    
     CgGLFWwindow();
     ~CgGLFWwindow();
-    
-    void init(int , int );
+
+    void init(int, int);
     void setGui(CgBaseGui* gui);
-    void show();
+    void show() const;
 
 private:
-    
     static void glfw_error_callback(int error, const char* description);
     static void glfw_window_size_callback(GLFWwindow* window, int size_x, int size_y);
 
-    
-    GLFWwindow* window;
+
+    GLFWwindow* window{};
     ImVec4 clear_color;
-    CgBaseGui* myGui;
+    CgBaseGui* myGui{};
 };
 
 #endif

@@ -8,7 +8,6 @@
 #include "cgbasegui.h"
 
 
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -26,15 +25,13 @@ void CgGLFWwindow::glfw_window_size_callback(GLFWwindow* window, int size_x, int
 {
     if (window_size_x != size_x || window_size_y != size_y)
     {
-        window_size_x=size_x;
-        window_size_y=size_y;
+        window_size_x = size_x;
+        window_size_y = size_y;
     }
 }
 
 CgGLFWwindow::CgGLFWwindow()
-{
-   
-}
+= default;
 
 CgGLFWwindow::~CgGLFWwindow()
 {
@@ -47,13 +44,13 @@ CgGLFWwindow::~CgGLFWwindow()
     glfwTerminate();
 }
 
-void CgGLFWwindow::init(int size_x,int size_y)
+void CgGLFWwindow::init(int size_x, int size_y)
 {
-    window_size_x=size_x;
-    window_size_y=size_y;
-    
+    window_size_x = size_x;
+    window_size_y = size_y;
+
     glfwSetErrorCallback(CgGLFWwindow::glfw_error_callback);
-   
+
     if (!glfwInit())
         return;
 
@@ -69,8 +66,8 @@ void CgGLFWwindow::init(int size_x,int size_y)
     const char* glsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
 #else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
@@ -80,37 +77,38 @@ void CgGLFWwindow::init(int size_x,int size_y)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
- 
 
     // Create window with graphics context
     std::cout << glsl_version << std::endl;
-    
+
     window = glfwCreateWindow(window_size_x, window_size_y, "Computergrafik - Übung", nullptr, nullptr);
     glfwSetWindowSizeCallback(window, CgGLFWwindow::glfw_window_size_callback);
-    
+
     if (window == nullptr)
         return;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-  
+
     glewExperimental = GL_TRUE;
-    
-    
-    if (glewInit() != GLEW_OK) {
+
+
+    if (glewInit() != GLEW_OK)
+    {
         std::cout << "glew initialisation failed!\n";
         glfwDestroyWindow(window);
         glfwTerminate();
         return;
     }
-    
-    
+
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -119,20 +117,18 @@ void CgGLFWwindow::init(int size_x,int size_y)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
-    
+
     // Our state
     clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-   
 }
 
 void CgGLFWwindow::setGui(CgBaseGui* gui)
 {
-    myGui=gui;
+    myGui = gui;
     myGui->initGUI();
 }
 
-void CgGLFWwindow::show()
+void CgGLFWwindow::show() const
 {
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -141,30 +137,30 @@ void CgGLFWwindow::show()
         glfwPollEvents();
 
         int display_w, display_h;
-       
+
         glfwGetFramebufferSize(window, &display_w, &display_h);
-        
+
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w,
+                     clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        
+
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         // create gui for Computergrafik 2
-        myGui->showGUI(window_size_x,window_size_y);
-        
-        
-        
+        myGui->showGUI(window_size_x, window_size_y);
+
+
         // Rendering
         ImGui::Render();
-        
-       
+
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-     
+
         glfwSwapBuffers(window);
     }
 }

@@ -16,12 +16,12 @@ extern int window_size_x;
 extern int window_size_y;
 
 
-void CgGLFWwindow::glfw_error_callback(int error, const char* description)
+void CgGLFWwindow::glfw_error_callback(const int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-void CgGLFWwindow::glfw_window_size_callback(GLFWwindow* window, int size_x, int size_y)
+void CgGLFWwindow::glfw_window_size_callback(GLFWwindow*, const int size_x, const int size_y)
 {
     if (window_size_x != size_x || window_size_y != size_y)
     {
@@ -44,12 +44,12 @@ CgGLFWwindow::~CgGLFWwindow()
     glfwTerminate();
 }
 
-void CgGLFWwindow::init(int size_x, int size_y)
+void CgGLFWwindow::init(const int size_x, const int size_y)
 {
     window_size_x = size_x;
     window_size_y = size_y;
 
-    glfwSetErrorCallback(CgGLFWwindow::glfw_error_callback);
+    glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit())
         return;

@@ -23,6 +23,10 @@ CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& ver
         createVertex(v2i, vertices, halfEdgeVertices);
 
         CgHeFace* face = new CgHeFace();
+        face->setIndex1(v0i);
+        face->setIndex2(v1i);
+        face->setIndex3(v2i);
+
         std::pair<CgHeEdge*, CgHeEdge*> pair = createEdge({v0i, v1i}, halfEdges, halfEdgeVertices);
         CgHeEdge* edgeOneForward = pair.first;
         CgHeEdge* edgeOneBackward = pair.second;
@@ -62,6 +66,7 @@ CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vecto
     if (halfEdgeVertices[index] == nullptr)
     {
         halfEdgeVertices[index] = new CgHeVert();
+        halfEdgeVertices[index]->setIndex(index);
         halfEdgeVertices[index]->m_color = glm::vec3(1, 0, 0);
         halfEdgeVertices[index]->m_position = vertices[index];
         this->m_vertices.push_back(halfEdgeVertices[index]);
@@ -77,6 +82,13 @@ std::pair<CgHeEdge*, CgHeEdge*> CgHalfEdgeTriangleMesh::createEdge(const std::pa
     }
     CgHeEdge* edge = new CgHeEdge();
     CgHeEdge* reversed_edge = new CgHeEdge();
+
+    edge->setStartIndex(edge_vertices.first);
+    edge->setEndIndex(edge_vertices.second);
+
+    reversed_edge->setStartIndex(edge_vertices.second);
+    reversed_edge->setEndIndex(edge_vertices.first);
+
     edge->m_pair = reversed_edge;
     reversed_edge->m_pair = edge;
     halfEdges[edge_vertices] = edge;
@@ -129,16 +141,16 @@ void CgHalfEdgeTriangleMesh::integrityCheck()
             std::cout << "face " << i << " edge null" << std::endl;
             return;
         }
-        const CgBaseHeEdge* next_pair_edge = edge->next();
+        const CgBaseHeEdge* next_pair_edge = pair_edge->next();
         if (next_pair_edge == nullptr)
         {
             std::cout << "face " << i << " next edge null" << std::endl;
             return;
         }
-        const CgBaseHeEdge* next_next_pair_edge = next_edge->next();
+        const CgBaseHeEdge* next_next_pair_edge = next_pair_edge->next();
         if (next_next_pair_edge == nullptr || next_next_pair_edge->next() != pair_edge)
         {
-            std::cout << "face " << i << " edge loop invalid" << std::endl;
+            std::cout << "face " << i << " reverse edge loop invalid" << std::endl;
         }
     }
 }

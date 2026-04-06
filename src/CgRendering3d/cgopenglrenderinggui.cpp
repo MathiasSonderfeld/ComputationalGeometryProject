@@ -361,9 +361,9 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
     ImGui::Begin("OpenGL Rendering");
     ImGui::Text("Select obj file:");
 
-    // change filenames if you want to use other models "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj",
+    // change filenames if you want to use other models
     const char* items[] = {
-         "../models/stumpf.obj", "../models/halfbunny.obj"
+         "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj", "../models/stumpf.obj", "../models/halfbunny.obj"
     };
     static int item_current = 0;
 

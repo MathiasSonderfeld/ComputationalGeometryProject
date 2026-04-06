@@ -42,6 +42,7 @@ CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& ver
 
         this->m_faces.push_back(face);
     }
+    this->calculateNormals();
 }
 
 CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices)
@@ -75,6 +76,19 @@ CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(const std::pair<int, int>& edge_ver
     edge->m_vert->m_edge = edge;
     this->m_edges.push_back(edge);
     return edge;
+}
+
+void CgHalfEdgeTriangleMesh::calculateNormals() const
+{
+    for (const auto m_face : m_faces)
+    {
+        glm::vec3 v1 = m_face->edge()->vert()->position();
+        glm::vec3 v2 = m_face->edge()->next()->vert()->position();
+        glm::vec3 v3 = m_face->edge()->next()->next()->vert()->position();
+        const glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
+        m_face->setNormal(normal);
+    }
+
 }
 
 CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh()

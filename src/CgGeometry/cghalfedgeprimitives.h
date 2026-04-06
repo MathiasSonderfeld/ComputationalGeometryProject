@@ -16,6 +16,7 @@ public:
 
     const CgBaseHeEdge* edge() const override;
     const glm::vec3 normal() const override;
+    void setNormal(glm::vec3) override;
     int index1() const;
     int index2() const;
     int index3() const;

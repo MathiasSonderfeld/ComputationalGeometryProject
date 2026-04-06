@@ -42,6 +42,8 @@ public:
 private:
     CgHeVert* createVertex(int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
     CgHeEdge* createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
+    void calculateNormals() const;
+
     std::vector<CgBaseHeFace*> m_faces;
     std::vector<CgBaseHeVert*> m_vertices;
     std::vector<CgBaseHeEdge*> m_edges;

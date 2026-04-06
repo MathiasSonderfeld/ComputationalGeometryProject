@@ -12,6 +12,7 @@ public:
 
     virtual const CgBaseHeEdge* edge() const =0;
     virtual const glm::vec3 normal() const =0;
+    virtual void setNormal(glm::vec3);
 };
 
 class CgBaseHeEdge

@@ -37,6 +37,11 @@ const glm::vec3 CgHeFace::normal() const
     return m_normal;
 }
 
+void CgHeFace::setNormal(const glm::vec3 normal)
+{
+    this->m_normal = normal;
+}
+
 const CgBaseHeVert* CgHeEdge::vert() const
 {
     return static_cast<CgBaseHeVert*>(m_vert);
@@ -132,3 +137,4 @@ void CgHeFace::setIndex3(const int index3)
 {
     this->m_index3 = index3;
 }
+

@@ -5,6 +5,7 @@
 #include <vector>
 #include "cgbasegui.h"
 #include "cgframebuffershader.h"
+#include "cghalfedgetrianglemesh.h"
 
 class CgPointList;
 class CgSphere;
@@ -76,6 +77,7 @@ private:
  static void LoadFromFile(const char* filename, std::vector<glm::vec3>& vertices,
                    std::vector<glm::vec3>& normals,
                    std::vector<unsigned int>& indices);
+ void updateRenderNormalsHalfEdges(CgBaseRenderableObject* obj);
 
 
  /* ***********************************************************

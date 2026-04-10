@@ -15,14 +15,15 @@ public:
     ~CgHeFace() override;
 
     const CgBaseHeEdge* edge() const override;
+    const glm::vec3 center() const override;
     const glm::vec3 normal() const override;
     void setNormal(glm::vec3) override;
-    int index1() const;
-    int index2() const;
-    int index3() const;
-    void setIndex1(int);
-    void setIndex2(int);
-    void setIndex3(int);
+    int index1() const override;
+    int index2() const override;
+    int index3() const override;
+    void setIndex1(int) override;
+    void setIndex2(int) override;
+    void setIndex3(int) override;
 
     CgHeEdge* m_edge;
     glm::vec3 m_normal{};
@@ -41,13 +42,16 @@ public:
     const CgBaseHeEdge* edge() const override;
     const glm::vec3 position() const override;
     const glm::vec3 color() const override;
-    int index() const;
-    void setIndex(int);
+    const glm::vec3 normal() const override;
+    void setNormal(glm::vec3) override;
+    int index() const override;
+    void setIndex(int) override;
 
 
     CgHeEdge* m_edge;
     glm::vec3 m_position{};
     glm::vec3 m_color{};
+    glm::vec3 m_normal{};
     int m_index = -1;
 };
 
@@ -61,10 +65,10 @@ public:
     const CgBaseHeEdge* pair() const override;
     const CgBaseHeVert* vert() const override;
     const CgBaseHeFace* face() const override;
-    int startIndex() const;
-    int endIndex() const;
-    void setStartIndex(int);
-    void setEndIndex(int);
+    int startIndex() const override;
+    int endIndex() const override;
+    void setStartIndex(int) override;
+    void setEndIndex(int) override;
 
     CgHeEdge* m_next;
     CgHeEdge* m_pair;

@@ -32,6 +32,11 @@ const CgBaseHeEdge* CgHeFace::edge() const
     return static_cast<CgBaseHeEdge*>(m_edge);
 }
 
+const glm::vec3 CgHeFace::center() const
+{
+    return (m_edge->vert()->position() + m_edge->next()->vert()->position() + m_edge->next()->next()->vert()->position()) / 3.0f;
+}
+
 const glm::vec3 CgHeFace::normal() const
 {
     return m_normal;
@@ -76,6 +81,15 @@ const glm::vec3 CgHeVert::position() const
 const glm::vec3 CgHeVert::color() const
 {
     return m_color;
+}
+
+const glm::vec3 CgHeVert::normal() const {
+    return m_normal;
+}
+
+void CgHeVert::setNormal(const glm::vec3 normal)
+{
+    this->m_normal = normal;
 }
 
 int CgHeVert::index() const

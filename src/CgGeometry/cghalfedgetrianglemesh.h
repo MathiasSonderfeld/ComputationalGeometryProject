@@ -34,15 +34,17 @@ public:
     //inherited from CgBaseHalfEdgeTriangleMesh
 
     const std::vector<CgBaseHeFace*>& getFaces() const override;
+    const std::vector<CgBaseHeVert*>& getVertices() const override;
 
     //own stuff
-    const glm::vec3 getCenter() const;
+    glm::vec3 getCenter() const;
 
 
 private:
     CgHeVert* createVertex(int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
     CgHeEdge* createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
     void calculateNormals() const;
+    static glm::vec3 calculateVertexNormal(const CgBaseHeVert* vertex);
 
     std::vector<CgBaseHeFace*> m_faces;
     std::vector<CgBaseHeVert*> m_vertices;

@@ -5,19 +5,16 @@
 
 extern int getUniqueId();
 
-CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals, const std::vector<unsigned int>& face_indices) :
-    m_type(HalfEdgeTriangleMesh),
-    m_id(getUniqueId())
-{
-
+CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(
+    const std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals, const std::vector<unsigned int>& face_indices) : m_type(HalfEdgeTriangleMesh),
+    m_id(getUniqueId()) {
     std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash> halfEdges;
     std::unordered_map<int, CgHeVert*> halfEdgeVertices;
 
-    for (int i = 0; i < face_indices.size(); i+=3)
-    {
+    for (int i = 0; i < face_indices.size(); i += 3) {
         int v0i = face_indices[i];
-        int v1i = face_indices[i+1];
-        int v2i = face_indices[i+2];
+        int v1i = face_indices[i + 1];
+        int v2i = face_indices[i + 2];
         createVertex(v0i, vertices, halfEdgeVertices);
         createVertex(v1i, vertices, halfEdgeVertices);
         createVertex(v2i, vertices, halfEdgeVertices);
@@ -45,10 +42,8 @@ CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(const std::vector<glm::vec3>& ver
     this->calculateNormals();
 }
 
-CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices)
-{
-    if (halfEdgeVertices[index] == nullptr)
-    {
+CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices) {
+    if (halfEdgeVertices[index] == nullptr) {
         halfEdgeVertices[index] = new CgHeVert();
         halfEdgeVertices[index]->setIndex(index);
         halfEdgeVertices[index]->m_color = glm::vec3(1, 0, 0);
@@ -58,8 +53,8 @@ CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vecto
     return halfEdgeVertices[index];
 }
 
-CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices)
-{
+CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(
+    const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices) {
     CgHeEdge* edge = new CgHeEdge();
     edge->setStartIndex(edge_vertices.first);
     edge->setEndIndex(edge_vertices.second);
@@ -67,8 +62,7 @@ CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(const std::pair<int, int>& edge_ver
     halfEdges[edge_vertices] = edge;
 
     auto pair_edge_it = halfEdges.find({edge_vertices.second, edge_vertices.first});
-    if (pair_edge_it != nullptr)
-    {
+    if (pair_edge_it != nullptr) {
         edge->m_pair = pair_edge_it->second;
         pair_edge_it->second->m_pair = edge;
     }
@@ -78,10 +72,8 @@ CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(const std::pair<int, int>& edge_ver
     return edge;
 }
 
-void CgHalfEdgeTriangleMesh::calculateNormals() const
-{
-    for (const auto m_face : m_faces)
-    {
+void CgHalfEdgeTriangleMesh::calculateNormals() const {
+    for (const auto m_face : m_faces) {
         glm::vec3 v1 = m_face->edge()->vert()->position();
         glm::vec3 v2 = m_face->edge()->next()->vert()->position();
         glm::vec3 v3 = m_face->edge()->next()->next()->vert()->position();
@@ -89,13 +81,52 @@ void CgHalfEdgeTriangleMesh::calculateNormals() const
         m_face->setNormal(normal);
     }
 
+    for (CgBaseHeVert* vertex : m_vertices) {
+        const glm::vec3 normal = glm::normalize(calculateVertexNormal(vertex));
+        vertex->setNormal(normal);
+    }
 }
 
-CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh()
-{
+glm::vec3 CgHalfEdgeTriangleMesh::calculateVertexNormal(const CgBaseHeVert* vertex) {
+    glm::vec3 normal(0.0f);
+    const CgBaseHeEdge* start = vertex->edge();
+
+    if (start == nullptr)
+        return normal;
+
+    const CgBaseHeEdge* edge = start;
+
+    do {
+        if (edge->face() != nullptr)
+            normal += edge->face()->normal();
+
+        if (edge->pair() == nullptr)
+            break; // Boundary
+
+        edge = edge->pair()->next();
+    }
+    while (edge != start);
+
+    // only true if we didnt hit a boundary
+    if (edge != start) {
+        edge = start;
+        do {
+            edge = edge->next()->next();
+            if (edge->pair() == nullptr)
+                break;
+
+            edge = edge->pair();
+            if (edge->face() != nullptr)
+                normal += edge->face()->normal();
+        }
+        while (edge != start);
+    }
+    return normal;
+}
+
+CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh() {
     // that's not enough, have to kill Objects as well´
-    for (const auto m_face : m_faces)
-    {
+    for (const auto m_face : m_faces) {
         delete m_face;
     }
     for (const auto m_edge : m_edges) {
@@ -110,16 +141,17 @@ CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh()
     m_vertices.clear();
 }
 
-const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const
-{
+const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const {
     return m_faces;
 }
 
-const glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const
-{
+const std::vector<CgBaseHeVert*>& CgHalfEdgeTriangleMesh::getVertices() const {
+    return m_vertices;
+}
+
+glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const {
     glm::vec3 center(0.);
-    for (const auto m_vert : m_vertices)
-    {
+    for (const auto m_vert : m_vertices) {
         center += m_vert->position();
     }
     center /= static_cast<double>(m_vertices.size());

@@ -26,8 +26,7 @@
 using namespace Eigen;
 
 
-CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false)
-{
+CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     gui_current_path = "";
     show_demo_window = true;
     m_polygon_mode = 2;
@@ -69,21 +68,17 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false)
     m_renderer.setCustomRotationMatrix(custom_rot);
 }
 
-CgOpenGLRenderingGui::CgOpenGLRenderingGui(const std::string& current_path) : CgOpenGLRenderingGui()
-{
+CgOpenGLRenderingGui::CgOpenGLRenderingGui(const std::string& current_path) : CgOpenGLRenderingGui() {
     gui_current_path = current_path;
 }
 
 
-CgOpenGLRenderingGui::~CgOpenGLRenderingGui()
-{
+CgOpenGLRenderingGui::~CgOpenGLRenderingGui() {
     reset();
 }
 
-void CgOpenGLRenderingGui::reset()
-{
-    for (auto obj : m_renderable_objects)
-    {
+void CgOpenGLRenderingGui::reset() {
+    for (auto obj : m_renderable_objects) {
         m_renderer.removeObject(obj);
         delete obj;
         // ReSharper disable once CppDFAUnusedValue
@@ -116,11 +111,9 @@ void CgOpenGLRenderingGui::reset()
     m_render_normals = nullptr;
 }
 
-void CgOpenGLRenderingGui::renderObjects()
-{
+void CgOpenGLRenderingGui::renderObjects() {
     // in a basic setting you have a list of renderable objects that are iterated for rendering
-    for (const auto obj : m_renderable_objects)
-    {
+    for (const auto obj : m_renderable_objects) {
         if (obj != nullptr)
             m_renderer.renderObject(obj);
     }
@@ -153,8 +146,7 @@ void CgOpenGLRenderingGui::renderObjects()
         m_renderer.renderObject(m_triangle_fan);
 }
 
-void CgOpenGLRenderingGui::createTriangleFanExample()
-{
+void CgOpenGLRenderingGui::createTriangleFanExample() {
     // show an example for a triangle fan
     // provided for MIN-COG lecture
 
@@ -171,8 +163,7 @@ void CgOpenGLRenderingGui::createTriangleFanExample()
     m_renderer.initObject(m_triangle_fan);
 }
 
-void CgOpenGLRenderingGui::createControlPolygonExample()
-{
+void CgOpenGLRenderingGui::createControlPolygonExample() {
     // init some arbitrary point positions
     std::vector<glm::vec3> points;
     points.emplace_back(-0.5, 0.0, 0.0);
@@ -188,8 +179,7 @@ void CgOpenGLRenderingGui::createControlPolygonExample()
 
     // each control point is additionally a pickable sphere
     // holding cmd/ctrl as modifier key, picking and moving the spheres is possible
-    for (const glm::vec3& point : points)
-    {
+    for (const glm::vec3& point : points) {
         CgSphere* newSphere = new CgSphere(point, 0.03);
         m_control_points.push_back(newSphere);
         m_renderer.initObject(newSphere);
@@ -197,11 +187,9 @@ void CgOpenGLRenderingGui::createControlPolygonExample()
 }
 
 
-void CgOpenGLRenderingGui::renderControlPolygonExample()
-{
+void CgOpenGLRenderingGui::renderControlPolygonExample() {
     // render the control points for curve example
-    for (const auto obj : m_control_points)
-    {
+    for (const auto obj : m_control_points) {
         if (obj != nullptr)
             m_renderer.renderObject(obj);
     }
@@ -211,10 +199,8 @@ void CgOpenGLRenderingGui::renderControlPolygonExample()
         m_renderer.renderObject(m_polyline);
 }
 
-void CgOpenGLRenderingGui::deleteControlPolygonExample()
-{
-    for (auto obj : m_control_points)
-    {
+void CgOpenGLRenderingGui::deleteControlPolygonExample() {
+    for (auto obj : m_control_points) {
         delete obj;
         // ReSharper disable once CppDFAUnusedValue
         obj = nullptr;
@@ -225,8 +211,7 @@ void CgOpenGLRenderingGui::deleteControlPolygonExample()
     m_polyline = nullptr;
 }
 
-void CgOpenGLRenderingGui::initGUI()
-{
+void CgOpenGLRenderingGui::initGUI() {
     // let gui know its opengl renderer
     m_renderer.setOpenGLRenderingGui(this);
 
@@ -241,8 +226,7 @@ void CgOpenGLRenderingGui::initGUI()
 }
 
 
-void CgOpenGLRenderingGui::calculatePickRayIntersections(glm::vec3 ray_start, glm::vec3 ray_direction)
-{
+void CgOpenGLRenderingGui::calculatePickRayIntersections(glm::vec3 ray_start, glm::vec3 ray_direction) {
     // init new CgPolyline to draw the pick ray
 
     delete m_select_ray;
@@ -259,27 +243,21 @@ void CgOpenGLRenderingGui::calculatePickRayIntersections(glm::vec3 ray_start, gl
     // pickable are at the moment only control points
     m_selected_control_point = nullptr;
 
-    for (const auto obj : m_control_points)
-    {
-        if (obj != nullptr)
-        {
+    for (const auto obj : m_control_points) {
+        if (obj != nullptr) {
             if (obj->hasIntersection(ray_start, ray_direction, 1000.0))
                 m_selected_control_point = obj;
         }
     }
 }
 
-void CgOpenGLRenderingGui::moveSelectedObjectInLocalCoordinates(glm::vec3 dir)
-{
+void CgOpenGLRenderingGui::moveSelectedObjectInLocalCoordinates(glm::vec3 dir) {
     std::vector<glm::vec3> points;
 
-    for (auto obj : m_control_points)
-    {
-        if (obj != nullptr)
-        {
+    for (auto obj : m_control_points) {
+        if (obj != nullptr) {
             // move only selected point
-            if (obj == m_selected_control_point)
-            {
+            if (obj == m_selected_control_point) {
                 // set a new center for the object in local coordinates
                 // this is a hack, since we do not have a scenegraph
                 glm::vec3 v = obj->getCenter() - dir;
@@ -302,15 +280,13 @@ void CgOpenGLRenderingGui::moveSelectedObjectInLocalCoordinates(glm::vec3 dir)
 }
 
 
-void CgOpenGLRenderingGui::showGUI(int window_size_x, int window_size_y)
-{
+void CgOpenGLRenderingGui::showGUI(int window_size_x, int window_size_y) {
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y - 20));
 
     showOpenGLWindow();
 
-    if (show_demo_window)
-    {
+    if (show_demo_window) {
         ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, 10));
         ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 6.0));
     }
@@ -336,8 +312,7 @@ void CgOpenGLRenderingGui::showGUI(int window_size_x, int window_size_y)
         ImGui::ShowDemoWindow(&show_demo_window);
 }
 
-void CgOpenGLRenderingGui::createRenderOptionsGui()
-{
+void CgOpenGLRenderingGui::createRenderOptionsGui() {
     ImGui::Begin("Render Options");
 
 
@@ -356,20 +331,18 @@ void CgOpenGLRenderingGui::createRenderOptionsGui()
     ImGui::End();
 }
 
-void CgOpenGLRenderingGui::showOpenGLWindow()
-{
+void CgOpenGLRenderingGui::showOpenGLWindow() {
     ImGui::Begin("OpenGL Rendering");
     ImGui::Text("Select obj file:");
 
     // change filenames if you want to use other models
     const char* items[] = {
-         "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj", "../models/stumpf.obj", "../models/halfbunny.obj"
+        "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj", "../models/stumpf.obj", "../models/cube.obj"
     };
     static int item_current = 0;
 
     ImGui::SameLine();
-    if (ImGui::Button("load as CgTriangleMesh"))
-    {
+    if (ImGui::Button("load as CgTriangleMesh")) {
         // set filename
         std::string obj_filename = gui_current_path;
         obj_filename += static_cast<std::string>(items[item_current]);
@@ -382,8 +355,7 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
         // load
         LoadFromFile(obj_filename.c_str(), vertices, normals, indices);
 
-        if (!vertices.empty())
-        {
+        if (!vertices.empty()) {
             // generate TriangleMesh
             m_triangle_mesh = new CgTriangleMesh(vertices, normals, indices);
             m_renderer.initObject(m_triangle_mesh);
@@ -393,8 +365,7 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
         }
     }
     ImGui::SameLine();
-    if (ImGui::Button("load as CgPointCloud"))
-    {
+    if (ImGui::Button("load as CgPointCloud")) {
         delete m_render_normals;
         m_render_normals = nullptr;
 
@@ -416,8 +387,7 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
         m_renderer.initObject(m_point_cloud);
     }
 
-    if (ImGui::Button("load as CgHalfEdgeTriangleMesh"))
-    {
+    if (ImGui::Button("load as CgHalfEdgeTriangleMesh")) {
         delete m_render_normals;
         m_render_normals = nullptr;
 
@@ -436,11 +406,11 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
         // showing only the simple example for HalfEdgeMesh
         m_half_edge_triangle_mesh = new CgHalfEdgeTriangleMesh(vertices, normals, indices);
         m_renderer.initObject(m_half_edge_triangle_mesh);
+        updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("reset"))
-    {
+    if (ImGui::Button("reset")) {
         reset();
     }
 
@@ -452,19 +422,16 @@ void CgOpenGLRenderingGui::showOpenGLWindow()
 }
 
 
-void CgOpenGLRenderingGui::createAufgabenTabBar()
-{
+void CgOpenGLRenderingGui::createAufgabenTabBar() {
     ImGui::Begin("Wähle Aufgabe");
     constexpr ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
     ImGui::BeginTabBar("Wähle Aufgabe", tab_bar_flags);
 
-    if (ImGui::BeginTabItem("Aufgabe 1"))
-    {
+    if (ImGui::BeginTabItem("Aufgabe 1")) {
         ImGui::Text("use this tab for own gui elements");
         ImGui::EndTabItem();
     }
-    if (ImGui::BeginTabItem("Aufgabe 2"))
-    {
+    if (ImGui::BeginTabItem("Aufgabe 2")) {
         ImGui::Text("Das ist ein weiterer Tab \nadd whatever you need");
         ImGui::EndTabItem();
     }
@@ -477,11 +444,11 @@ void CgOpenGLRenderingGui::createAufgabenTabBar()
 }
 
 
-void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
-                                        std::vector<glm::vec3>& vertices,
-                                        std::vector<glm::vec3>& normals,
-                                        std::vector<unsigned int>& indices)
-{
+void CgOpenGLRenderingGui::LoadFromFile(
+    const char* filename,
+    std::vector<glm::vec3>& vertices,
+    std::vector<glm::vec3>& normals,
+    std::vector<unsigned int>& indices) {
     std::vector<CgTriangleMesh*> results;
 
     tinyobj::attrib_t attributes;
@@ -500,8 +467,7 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
     tinyobj::shape_t& shape = shapes[0];
     tinyobj::mesh_t& mesh = shape.mesh;
 
-    for (int j = 0; j < attributes.vertices.size() / 3; j++)
-    {
+    for (int j = 0; j < attributes.vertices.size() / 3; j++) {
         vertices.emplace_back(attributes.vertices[j * 3],
                               attributes.vertices[j * 3 + 1],
                               attributes.vertices[j * 3 + 2]);
@@ -509,8 +475,7 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
 
     std::cout << attributes.vertices.size() / 3 << " vertices found" << std::endl;;
 
-    for (int j = 0; j < attributes.normals.size() / 3; j++)
-    {
+    for (int j = 0; j < attributes.normals.size() / 3; j++) {
         normals.emplace_back(attributes.normals[j * 3],
                              attributes.normals[j * 3 + 1],
                              attributes.normals[j * 3 + 2]);
@@ -519,8 +484,7 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
     std::cout << attributes.normals.size() / 3 << " normals found" << std::endl;;
 
 
-    for (auto i : mesh.indices)
-    {
+    for (auto i : mesh.indices) {
         indices.push_back(i.vertex_index);
     }
 
@@ -533,14 +497,19 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
     double min_z = vertices[0].z;
     glm::vec3 cog = glm::vec3(0.0, 0.0, 0.0);
 
-    for (auto v : vertices)
-    {
-        if (v.x < min_x) min_x = v.x;
-        if (v.x < min_y) min_x = v.y;
-        if (v.x < min_z) min_x = v.z;
-        if (v.x > max_x) max_x = v.x;
-        if (v.x > max_y) max_y = v.y;
-        if (v.x > max_z) max_z = v.z;
+    for (auto v : vertices) {
+        if (v.x < min_x)
+            min_x = v.x;
+        if (v.x < min_y)
+            min_x = v.y;
+        if (v.x < min_z)
+            min_x = v.z;
+        if (v.x > max_x)
+            max_x = v.x;
+        if (v.x > max_y)
+            max_y = v.y;
+        if (v.x > max_z)
+            max_z = v.z;
         cog += v;
     }
 
@@ -554,8 +523,7 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
     // scale greatest value to -1 or 1, others accordingly
     double scale = 1.0 / std::max(std::max(x, y), z);
 
-    for (auto& v : vertices)
-    {
+    for (auto& v : vertices) {
         // put cog in origin
         v -= cog;
         //scale....
@@ -563,27 +531,41 @@ void CgOpenGLRenderingGui::LoadFromFile(const char* filename,
     }
 }
 
+void CgOpenGLRenderingGui::updateRenderNormalsHalfEdges(CgBaseRenderableObject* obj) {
+    std::vector<glm::vec3> render_normals;
+    for (const auto face : dynamic_cast<CgHalfEdgeTriangleMesh*>(obj)->getFaces()) {
+        glm::vec3 center = face->center();
+        render_normals.push_back(center);
+        render_normals.push_back(center + face->normal() * 0.2f);
+    }
 
-void CgOpenGLRenderingGui::updateRenderNormals(CgBaseRenderableObject* obj)
-{
+    for (const auto vertex : dynamic_cast<CgHalfEdgeTriangleMesh*>(obj)->getVertices()) {
+        glm::vec3 center = vertex->position();
+        render_normals.push_back(center);
+        render_normals.push_back(center + vertex->normal() * 0.2f);
+    }
+
+    delete m_render_normals;
+    m_render_normals = new CgPointList(render_normals);
+    m_render_normals->setLineStyle(CG_LINES);
+    m_renderer.initObject(m_render_normals);
+}
+
+void CgOpenGLRenderingGui::updateRenderNormals(CgBaseRenderableObject* obj) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> normals;
 
     // show normals only for TriangleMesh or PointCloud
-    if ((obj->getType() == TriangleMesh) || (obj->getType() == PointCloud))
-    {
+    if ((obj->getType() == TriangleMesh) || (obj->getType() == PointCloud)) {
         points = dynamic_cast<CgBaseTriangleMesh*>(obj)->getVertices();
         normals = dynamic_cast<CgBaseTriangleMesh*>(obj)->getVertexNormals();
     }
-
-    if (points.size() == normals.size())
-    {
+    else if (points.size() == normals.size()) {
         std::vector<glm::vec3> render_normals;
         //generate lines
-        for (unsigned int i = 0; i < points.size(); i++)
-        {
+        for (unsigned int i = 0; i < points.size(); i++) {
             render_normals.push_back(points[i]);
-            render_normals.push_back(points[i] + normals[i] * 0.1f);
+            render_normals.push_back(points[i] + normals[i] * 0.2f);
         }
 
         // init a Pointlist rendered als GL_LINES
@@ -596,8 +578,7 @@ void CgOpenGLRenderingGui::updateRenderNormals(CgBaseRenderableObject* obj)
 }
 
 
-void CgOpenGLRenderingGui::calculateEigenDecomposition3x3()
-{
+void CgOpenGLRenderingGui::calculateEigenDecomposition3x3() {
     const glm::mat3 test_matrix = glm::mat3(3., 2., 4., 2., 0., 2., 4., 2., 3.);
     std::cout << glm::to_string(test_matrix) << std::endl;
 
@@ -609,8 +590,7 @@ void CgOpenGLRenderingGui::calculateEigenDecomposition3x3()
     std::cout << glm::to_string(eigenvectors) << std::endl;
 }
 
-void CgOpenGLRenderingGui::calculateSingularValueDecomposition()
-{
+void CgOpenGLRenderingGui::calculateSingularValueDecomposition() {
     //init some arbitrary test matrix
     MatrixXd C(2, 3);
     C(0, 0) = 3.0;

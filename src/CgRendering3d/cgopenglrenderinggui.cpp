@@ -31,6 +31,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     show_demo_window = true;
     m_polygon_mode = 2;
     m_lighting_mode = true;
+    m_normal_scale = 0.2f;
 
     m_selected_control_point = nullptr;
     m_show_render_normals = false;
@@ -328,6 +329,18 @@ void CgOpenGLRenderingGui::createRenderOptionsGui() {
 
     ImGui::Checkbox("render normals", &m_show_render_normals);
 
+    if (ImGui::SliderFloat("normal length", &m_normal_scale, 0.0f, 1.0f)) {
+        if (m_show_render_normals && m_render_normals != nullptr) {
+            if (m_triangle_mesh != nullptr) {
+                updateRenderNormals(m_triangle_mesh);
+            } else if (m_point_cloud != nullptr) {
+                updateRenderNormals(m_point_cloud);
+            } else if (m_half_edge_triangle_mesh != nullptr) {
+                updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
+            }
+        }
+    }
+
     ImGui::End();
 }
 
@@ -536,13 +549,13 @@ void CgOpenGLRenderingGui::updateRenderNormalsHalfEdges(CgBaseRenderableObject* 
     for (const auto face : dynamic_cast<CgHalfEdgeTriangleMesh*>(obj)->getFaces()) {
         glm::vec3 center = face->center();
         render_normals.push_back(center);
-        render_normals.push_back(center + face->normal() * 0.2f);
+        render_normals.push_back(center + face->normal() * m_normal_scale);
     }
 
     for (const auto vertex : dynamic_cast<CgHalfEdgeTriangleMesh*>(obj)->getVertices()) {
         glm::vec3 center = vertex->position();
         render_normals.push_back(center);
-        render_normals.push_back(center + vertex->normal() * 0.2f);
+        render_normals.push_back(center + vertex->normal() * m_normal_scale);
     }
 
     delete m_render_normals;
@@ -565,7 +578,7 @@ void CgOpenGLRenderingGui::updateRenderNormals(CgBaseRenderableObject* obj) {
         //generate lines
         for (unsigned int i = 0; i < points.size(); i++) {
             render_normals.push_back(points[i]);
-            render_normals.push_back(points[i] + normals[i] * 0.2f);
+            render_normals.push_back(points[i] + normals[i] * m_normal_scale);
         }
 
         // init a Pointlist rendered als GL_LINES

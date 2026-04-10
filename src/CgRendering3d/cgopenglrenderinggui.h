@@ -42,11 +42,12 @@ private:
  //OpenGl Rendering
  CgFrameBufferShader m_renderer;
 
- //variables for render settings
- int m_polygon_mode;
- bool m_lighting_mode;
- bool show_pick_ray;
- bool m_show_render_normals;
+  //variables for render settings
+  int m_polygon_mode;
+  bool m_lighting_mode;
+  bool show_pick_ray;
+  bool m_show_render_normals;
+  float m_normal_scale; // Skalierungsfaktor für Normalenvektoren
 
  // build gui
  void showOpenGLWindow();

@@ -4,10 +4,8 @@
 extern int getUniqueId();
 
 
-CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh() :
-    m_type(HalfEdgeTriangleMesh),
-    m_id(getUniqueId())
-{
+CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh() : m_type(HalfEdgeTriangleMesh),
+                                                   m_id(getUniqueId()) {
     CgHeFace* nf1 = new CgHeFace();
     CgHeFace* nf2 = new CgHeFace();
 
@@ -81,33 +79,29 @@ CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh() :
     nf2->m_normal = glm::vec3(0.0, 0.0, 1.0);
 }
 
-CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(std::vector<glm::vec3>& verts, std::vector<glm::vec3>& norm,
-                                               std::vector<unsigned int>& idx) : CgHalfEdgeTriangleMesh()
-{
+CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(
+    std::vector<glm::vec3>& verts, std::vector<glm::vec3>& norm,
+    std::vector<unsigned int>& idx) : CgHalfEdgeTriangleMesh() {
     // data ignored at the moment
     // to be implemented .... :-)
     // calling standard constructor instead for simple example
 }
 
 
-CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh()
-{
+CgHalfEdgeTriangleMesh::~CgHalfEdgeTriangleMesh() {
     // thats not enough, have to kill Objects as well´
     m_faces.clear();
     m_edges.clear();
     m_verts.clear();
 }
 
-const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const
-{
+const std::vector<CgBaseHeFace*>& CgHalfEdgeTriangleMesh::getFaces() const {
     return m_faces;
 }
 
-const glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const
-{
+const glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const {
     glm::vec3 center(0.);
-    for (const auto m_vert : m_verts)
-    {
+    for (const auto m_vert : m_verts) {
         center += m_vert->position();
     }
     center /= static_cast<double>(m_verts.size());

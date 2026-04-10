@@ -8,8 +8,7 @@
 class CgHeVert;
 class CgHeEdge;
 
-class CgHeFace : public CgBaseHeFace
-{
+class CgHeFace : public CgBaseHeFace {
 public:
     CgHeFace();
     ~CgHeFace() override;
@@ -23,8 +22,7 @@ public:
 };
 
 
-class CgHeVert : public CgBaseHeVert
-{
+class CgHeVert : public CgBaseHeVert {
 public:
     CgHeVert();
     ~CgHeVert() override;
@@ -39,8 +37,7 @@ public:
     glm::vec3 m_color{};
 };
 
-class CgHeEdge : public CgBaseHeEdge
-{
+class CgHeEdge : public CgBaseHeEdge {
 public:
     CgHeEdge();
     ~CgHeEdge() override;

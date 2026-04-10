@@ -333,9 +333,11 @@ void CgOpenGLRenderingGui::createRenderOptionsGui() {
         if (m_show_render_normals && m_render_normals != nullptr) {
             if (m_triangle_mesh != nullptr) {
                 updateRenderNormals(m_triangle_mesh);
-            } else if (m_point_cloud != nullptr) {
+            }
+            else if (m_point_cloud != nullptr) {
                 updateRenderNormals(m_point_cloud);
-            } else if (m_half_edge_triangle_mesh != nullptr) {
+            }
+            else if (m_half_edge_triangle_mesh != nullptr) {
                 updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
             }
         }

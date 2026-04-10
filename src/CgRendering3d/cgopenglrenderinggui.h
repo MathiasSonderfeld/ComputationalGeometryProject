@@ -16,8 +16,7 @@ class CgTriangleMesh;
 class CgTriangleFan;
 class CgPointCloud;
 
-class CgOpenGLRenderingGui : public CgBaseGui
-{
+class CgOpenGLRenderingGui : public CgBaseGui {
 public:
  // constructors / destructor
  explicit CgOpenGLRenderingGui(const std::string& current_path);
@@ -42,12 +41,12 @@ private:
  //OpenGl Rendering
  CgFrameBufferShader m_renderer;
 
-  //variables for render settings
-  int m_polygon_mode;
-  bool m_lighting_mode;
-  bool show_pick_ray;
-  bool m_show_render_normals;
-  float m_normal_scale; // Skalierungsfaktor für Normalenvektoren
+ //variables for render settings
+ int m_polygon_mode;
+ bool m_lighting_mode;
+ bool show_pick_ray;
+ bool m_show_render_normals;
+ float m_normal_scale; // Skalierungsfaktor für Normalenvektoren
 
  // build gui
  void showOpenGLWindow();
@@ -75,9 +74,10 @@ private:
  CgBaseHalfEdgeTriangleMesh* m_half_edge_triangle_mesh;
 
  // loading obj files
- static void LoadFromFile(const char* filename, std::vector<glm::vec3>& vertices,
-                   std::vector<glm::vec3>& normals,
-                   std::vector<unsigned int>& indices);
+ static void LoadFromFile(
+  const char* filename, std::vector<glm::vec3>& vertices,
+  std::vector<glm::vec3>& normals,
+  std::vector<unsigned int>& indices);
  void updateRenderNormalsHalfEdges(CgBaseRenderableObject* obj);
 
 

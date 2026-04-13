@@ -443,7 +443,15 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
     ImGui::BeginTabBar("Wähle Aufgabe", tab_bar_flags);
 
     if (ImGui::BeginTabItem("Aufgabe 1")) {
-        ImGui::Text("use this tab for own gui elements");
+        if (ImGui::Button("Subdivide Half-Edge Mesh")) {
+            if (m_half_edge_triangle_mesh != nullptr) {
+                dynamic_cast<CgHalfEdgeTriangleMesh*>(m_half_edge_triangle_mesh)->subdivide();
+                m_renderer.removeObject(m_half_edge_triangle_mesh);
+                m_renderer.initObject(m_half_edge_triangle_mesh);
+                updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
+            }
+        }
+
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("Aufgabe 2")) {

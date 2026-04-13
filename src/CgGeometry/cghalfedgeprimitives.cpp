@@ -124,3 +124,59 @@ void CgHeFace::setIndex2(const int index2) {
 void CgHeFace::setIndex3(const int index3) {
     this->m_index3 = index3;
 }
+
+CgHeEdge* CgHeFace::getEdge() const {
+    return m_edge;
+}
+
+void CgHeFace::setEdge(CgHeEdge* edge) {
+    this->m_edge = edge;
+}
+
+CgHeEdge* CgHeVert::getEdge() const {
+    return m_edge;
+}
+
+void CgHeVert::setEdge(CgHeEdge* edge) {
+    this->m_edge = edge;
+}
+
+void CgHeVert::setPosition(const glm::vec3& position) {
+    this->m_position = position;
+}
+
+void CgHeVert::setColor(const glm::vec3& color) {
+    this->m_color = color;
+}
+
+CgHeEdge* CgHeEdge::getNext() const {
+    return m_next;
+}
+
+void CgHeEdge::setNext(CgHeEdge* next) {
+    this->m_next = next;
+}
+
+CgHeEdge* CgHeEdge::getPair() const {
+    return m_pair;
+}
+
+void CgHeEdge::setPair(CgHeEdge* pair) {
+    this->m_pair = pair;
+}
+
+CgHeVert* CgHeEdge::getVert() const {
+    return m_vert;
+}
+
+void CgHeEdge::setVert(CgHeVert* vert) {
+    this->m_vert = vert;
+}
+
+CgHeFace* CgHeEdge::getFace() const {
+    return m_face;
+}
+
+void CgHeEdge::setFace(CgHeFace* face) {
+    this->m_face = face;
+}

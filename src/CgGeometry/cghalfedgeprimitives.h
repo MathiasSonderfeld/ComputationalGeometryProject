@@ -24,6 +24,10 @@ public:
     void setIndex2(int) override;
     void setIndex3(int) override;
 
+    // Getter für konkrete Klasse
+    CgHeEdge* getEdge() const;
+    void setEdge(CgHeEdge* edge);
+
     CgHeEdge* m_edge;
     glm::vec3 m_normal{};
     int m_index1 = -1;
@@ -45,6 +49,11 @@ public:
     int index() const override;
     void setIndex(int) override;
 
+    // Getter und Setter für konkrete Klasse
+    CgHeEdge* getEdge() const;
+    void setEdge(CgHeEdge* edge);
+    void setPosition(const glm::vec3& position);
+    void setColor(const glm::vec3& color);
 
     CgHeEdge* m_edge;
     glm::vec3 m_position{};
@@ -66,6 +75,16 @@ public:
     int endIndex() const override;
     void setStartIndex(int) override;
     void setEndIndex(int) override;
+
+    // Getter und Setter für konkrete Klasse
+    CgHeEdge* getNext() const;
+    void setNext(CgHeEdge* next);
+    CgHeEdge* getPair() const;
+    void setPair(CgHeEdge* pair);
+    CgHeVert* getVert() const;
+    void setVert(CgHeVert* vert);
+    CgHeFace* getFace() const;
+    void setFace(CgHeFace* face);
 
     CgHeEdge* m_next;
     CgHeEdge* m_pair;

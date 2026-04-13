@@ -48,10 +48,10 @@ private:
  bool m_show_render_normals;
  float m_normal_scale; // Skalierungsfaktor für Normalenvektoren
 
- // build gui
- void showOpenGLWindow();
- void createRenderOptionsGui();
- static void createAufgabenTabBar();
+  // build gui
+  void showOpenGLWindow();
+  void createRenderOptionsGui();
+  void createAufgabenTabBar();
 
  // variables for gui
  bool show_demo_window;

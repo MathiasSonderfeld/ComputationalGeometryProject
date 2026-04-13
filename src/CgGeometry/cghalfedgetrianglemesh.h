@@ -38,6 +38,7 @@ public:
 
     //own stuff
     glm::vec3 getCenter() const;
+    void subdivide();
 
 
 private:
@@ -48,7 +49,7 @@ private:
 
     std::vector<CgBaseHeFace*> m_faces;
     std::vector<CgBaseHeVert*> m_vertices;
-    std::vector<CgBaseHeEdge*> m_edges;
+    std::vector<CgHeEdge*> m_edges;
 
 
     const ObjectType m_type;

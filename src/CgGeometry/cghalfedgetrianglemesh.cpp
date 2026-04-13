@@ -62,7 +62,7 @@ CgHeEdge* CgHalfEdgeTriangleMesh::createEdge(
     halfEdges[edge_vertices] = edge;
 
     auto pair_edge_it = halfEdges.find({edge_vertices.second, edge_vertices.first});
-    if (pair_edge_it != nullptr) {
+    if (pair_edge_it != halfEdges.end()) {
         edge->m_pair = pair_edge_it->second;
         pair_edge_it->second->m_pair = edge;
     }

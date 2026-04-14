@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <ostream>
+#include <set>
 
 extern int getUniqueId();
 
@@ -161,38 +162,41 @@ glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const {
 
 void CgHalfEdgeTriangleMesh::subdivide() {
     const int edgeCount = m_edges.size();
+    std::set<CgHeEdge*> set;
+
     for (int i = 0; i < edgeCount; i++) {
         CgHeEdge* edge = m_edges[i];
+        if (set.find(edge) != set.end()) {
+            continue;
+        }
         const CgHeVert* start = edge->getVert();
-        //check if pair exists and was already split - if the next edge also refers to start as pair
-        if (edge->getPair() != nullptr && edge->getPair()->getNext()->getPair() == edge) {
+        CgHeEdge* next = edge->getNext();
+        const glm::vec3 newVertPos = (next->getVert()->position() + start->position()) / 2.0f;
+        CgHeVert* newVert = new CgHeVert();
+        newVert->setPosition(newVertPos);
+        newVert->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+        CgHeEdge* newEdge = new CgHeEdge();
+        newEdge->setVert(newVert);
+        newVert->setEdge(newEdge);
+        newEdge->setNext(next);
+        edge->setNext(newEdge);
+        set.insert(edge);
+        if (edge->getPair() != nullptr) {
             CgHeEdge* pair = edge->getPair();
-            CgHeEdge* pairSecond = pair->getNext();
-            CgHeVert* newVert = edge->getPair()->getNext()->getVert();
-            CgHeEdge* newEdge = new CgHeEdge();
-            newEdge->setFace(edge->getFace());
-            newEdge->setPair(pairSecond);
-            newEdge->setVert(newVert);
-            pairSecond->setPair(newEdge);
-            newEdge->setNext(edge->getNext());
-            edge->setNext(newEdge);
-            m_edges.push_back(newEdge);
+            CgHeEdge* pairNext = pair->getNext();
+            CgHeEdge* newPairEdge = new CgHeEdge();
+            newPairEdge->setVert(newVert);
+            newPairEdge->setNext(pairNext);
+            pair->setNext(newPairEdge);
+
+            newEdge->setPair(pair);
+            pair->setPair(newEdge);
+            edge->setPair(newPairEdge);
+            newPairEdge->setPair(edge);
+            set.insert(pair);
         }
-        else {
-            const CgHeEdge* next = edge->getNext();
-            const glm::vec3 newVertPos = (next->getVert()->position() + start->position()) / 2.0f;
-            CgHeVert* newVert = new CgHeVert();
-            newVert->setPosition(newVertPos);
-            newVert->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
-            CgHeEdge* newEdge = new CgHeEdge();
-            newEdge->setPair(edge->getPair());
-            newEdge->setVert(newVert);
-            newVert->setEdge(newEdge);
-            newEdge->setNext(edge->getNext());
-            edge->setNext(newEdge);
-            m_vertices.push_back(newVert);
-            m_edges.push_back(newEdge);
-        }
+        m_vertices.push_back(newVert);
+        m_edges.push_back(newEdge);
     }
 
     const int faceCount = m_faces.size();

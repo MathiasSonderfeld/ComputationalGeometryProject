@@ -183,6 +183,7 @@ void CgHalfEdgeTriangleMesh::subdivide() {
             const glm::vec3 newVertPos = (next->getVert()->position() + start->position()) / 2.0f;
             CgHeVert* newVert = new CgHeVert();
             newVert->setPosition(newVertPos);
+            newVert->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
             CgHeEdge* newEdge = new CgHeEdge();
             newEdge->setPair(edge->getPair());
             newEdge->setVert(newVert);
@@ -203,6 +204,8 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         CgHeEdge* edgeTwoSecond = edgeTwoFirst->getNext();
         CgHeEdge* edgeThreeFirst = edgeTwoSecond->getNext();
         CgHeEdge* edgeThreeSecond = edgeThreeFirst->getNext();
+
+
 
         CgHeVert* v12 = edgeOneSecond->getVert();
         CgHeVert* v23 = edgeTwoSecond->getVert();
@@ -226,8 +229,8 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         v31v12->setVert(v31);
         CgHeEdge* v12v31 = new CgHeEdge();
         v12v31->setVert(v12);
-        v31v12->setPair(v12v23);
-        v12v23->setPair(v31v12);
+        v31v12->setPair(v12v31);
+        v12v31->setPair(v31v12);
 
         CgHeFace* newFaceOne = new CgHeFace();
         CgHeFace* newFaceTwo = new CgHeFace();
@@ -250,18 +253,18 @@ void CgHalfEdgeTriangleMesh::subdivide() {
 
         newFaceTwo->setEdge(edgeTwoSecond);
         edgeTwoSecond->setNext(edgeThreeFirst);
-        edgeThreeFirst->setNext(v23v31);
-        v23v31->setNext(edgeTwoSecond);
+        edgeThreeFirst->setNext(v31v23);
+        v31v23->setNext(edgeTwoSecond);
         edgeTwoSecond->setFace(newFaceTwo);
-        v23v31->setFace(newFaceTwo);
+        v31v23->setFace(newFaceTwo);
         edgeThreeFirst->setFace(newFaceTwo);
 
         newFaceThree->setEdge(v31v12);
-        v31v12->setNext(v23v12);
-        v23v12->setNext(v23v31);
+        v31v12->setNext(v12v23);
+        v12v23->setNext(v23v31);
         v23v31->setNext(v31v12);
         v31v12->setFace(newFaceThree);
-        v23v12->setFace(newFaceThree);
+        v12v23->setFace(newFaceThree);
         v23v31->setFace(newFaceThree);
 
         this->m_edges.push_back(v12v23);
@@ -275,5 +278,7 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         this->m_faces.push_back(newFaceTwo);
         this->m_faces.push_back(newFaceThree);
     }
+
+    this->calculateNormals();
 }
 

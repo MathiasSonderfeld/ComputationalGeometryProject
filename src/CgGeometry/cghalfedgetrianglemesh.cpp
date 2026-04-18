@@ -165,13 +165,30 @@ void CgHalfEdgeTriangleMesh::subdivide() {
     std::set<CgHeEdge*> set;
 
     for (int i = 0; i < edgeCount; i++) {
-        CgHeEdge* edge = m_edges[i];
-        if (set.find(edge) != set.end()) {
+        CgHeEdge* current = m_edges[i];
+        if (set.find(current) != set.end()) {
             continue;
         }
-        const CgHeVert* start = edge->getVert();
-        CgHeEdge* next = edge->getNext();
-        const glm::vec3 newVertPos = (next->getVert()->position() + start->position()) / 2.0f;
+        const CgHeVert* start = current->getVert();
+        CgHeEdge* next = current->getNext();
+        glm::vec3 v0 = start->position();
+        glm::vec3 v1 = next->getVert()->position();
+        glm::vec3 newVertPos;
+        if (current->getPair() == nullptr) {
+            newVertPos = (v0 + v1) / 2.0f;
+        }
+        else {
+            CgHeEdge* next_next = next->getNext();
+            glm::vec3 v2 = next_next->getVert()->position();
+            CgHeEdge* pair_next_next = current->getPair()->getNext()->getNext();
+            glm::vec3 v3 = pair_next_next->getVert()->position();
+            glm::vec3 outer = v2+v3;
+            outer *= 1/8;
+            glm::vec3 inner = v0+v1;
+            inner *= 3/8;
+            newVertPos = inner + outer;
+        }
+
         CgHeVert* newVert = new CgHeVert();
         newVert->setPosition(newVertPos);
         newVert->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
@@ -179,10 +196,10 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         newEdge->setVert(newVert);
         newVert->setEdge(newEdge);
         newEdge->setNext(next);
-        edge->setNext(newEdge);
-        set.insert(edge);
-        if (edge->getPair() != nullptr) {
-            CgHeEdge* pair = edge->getPair();
+        current->setNext(newEdge);
+        set.insert(current);
+        if (current->getPair() != nullptr) {
+            CgHeEdge* pair = current->getPair();
             CgHeEdge* pairNext = pair->getNext();
             CgHeEdge* newPairEdge = new CgHeEdge();
             newPairEdge->setVert(newVert);
@@ -191,8 +208,8 @@ void CgHalfEdgeTriangleMesh::subdivide() {
 
             newEdge->setPair(pair);
             pair->setPair(newEdge);
-            edge->setPair(newPairEdge);
-            newPairEdge->setPair(edge);
+            current->setPair(newPairEdge);
+            newPairEdge->setPair(current);
             set.insert(pair);
         }
         m_vertices.push_back(newVert);
@@ -202,85 +219,84 @@ void CgHalfEdgeTriangleMesh::subdivide() {
     const int faceCount = m_faces.size();
     for (int i = 0; i < faceCount; i++) {
         CgHeFace* startFace = dynamic_cast<CgHeFace*>(m_faces[i]);
-        CgHeEdge* edgeOneFirst = startFace->getEdge();
-        CgHeEdge* edgeOneSecond = edgeOneFirst->getNext();
-        CgHeEdge* edgeTwoFirst = edgeOneSecond->getNext();
-        CgHeEdge* edgeTwoSecond = edgeTwoFirst->getNext();
-        CgHeEdge* edgeThreeFirst = edgeTwoSecond->getNext();
-        CgHeEdge* edgeThreeSecond = edgeThreeFirst->getNext();
+        CgHeEdge* AM1 = startFace->getEdge();
+        CgHeEdge* M1B = AM1->getNext();
+        CgHeEdge* BM2 = M1B->getNext();
+        CgHeEdge* M2C = BM2->getNext();
+        CgHeEdge* CM3 = M2C->getNext();
+        CgHeEdge* M3A = CM3->getNext();
 
+        CgHeVert* M1 = M1B->getVert();
+        CgHeVert* M2 = M2C->getVert();
+        CgHeVert* M3 = M3A->getVert();
 
+        CgHeEdge* M1M2 = new CgHeEdge();
+        M1M2->setVert(M1);
+        CgHeEdge* M2M1 = new CgHeEdge();
+        M2M1->setVert(M2);
+        M1M2->setPair(M2M1);
+        M2M1->setPair(M1M2);
 
-        CgHeVert* v12 = edgeOneSecond->getVert();
-        CgHeVert* v23 = edgeTwoSecond->getVert();
-        CgHeVert* v31 = edgeThreeSecond->getVert();
+        CgHeEdge* M2M3 = new CgHeEdge();
+        M2M3->setVert(M2);
+        CgHeEdge* M3M2 = new CgHeEdge();
+        M3M2->setVert(M3);
+        M2M3->setPair(M3M2);
+        M3M2->setPair(M2M3);
 
-        CgHeEdge* v12v23 = new CgHeEdge();
-        v12v23->setVert(v12);
-        CgHeEdge* v23v12 = new CgHeEdge();
-        v23v12->setVert(v23);
-        v12v23->setPair(v23v12);
-        v23v12->setPair(v12v23);
+        CgHeEdge* M3M1 = new CgHeEdge();
+        M3M1->setVert(M3);
+        CgHeEdge* M1M3 = new CgHeEdge();
+        M1M3->setVert(M1);
+        M3M1->setPair(M1M3);
+        M1M3->setPair(M3M1);
 
-        CgHeEdge* v23v31 = new CgHeEdge();
-        v23v31->setVert(v23);
-        CgHeEdge* v31v23 = new CgHeEdge();
-        v31v23->setVert(v31);
-        v23v31->setPair(v31v23);
-        v31v23->setPair(v23v31);
+        CgHeFace* A_M1_M3 = startFace;
+        CgHeFace* B_M2_M1 = new CgHeFace();
+        CgHeFace* C_M3_M2 = new CgHeFace();
+        CgHeFace* M1_M2_M3 = new CgHeFace();
 
-        CgHeEdge* v31v12 = new CgHeEdge();
-        v31v12->setVert(v31);
-        CgHeEdge* v12v31 = new CgHeEdge();
-        v12v31->setVert(v12);
-        v31v12->setPair(v12v31);
-        v12v31->setPair(v31v12);
+        AM1->setNext(M1M3);
+        M1M3->setNext(M3A);
+        M3A->setNext(AM1);
+        AM1->setFace(A_M1_M3);
+        M1M3->setFace(A_M1_M3);
+        M3A->setFace(A_M1_M3);
 
-        CgHeFace* newFaceOne = new CgHeFace();
-        CgHeFace* newFaceTwo = new CgHeFace();
-        CgHeFace* newFaceThree = new CgHeFace();
+        B_M2_M1->setEdge(M1B);
+        M1B->setNext(BM2);
+        BM2->setNext(M2M1);
+        M2M1->setNext(M1B);
+        M1B->setFace(B_M2_M1);
+        M2M1->setFace(B_M2_M1);
+        BM2->setFace(B_M2_M1);
 
-        edgeOneFirst->setNext(v12v31);
-        v12v31->setNext(edgeThreeSecond);
-        edgeThreeSecond->setNext(edgeOneFirst);
-        edgeOneFirst->setFace(startFace);
-        v12v31->setFace(startFace);
-        edgeThreeSecond->setFace(startFace);
+        C_M3_M2->setEdge(M2C);
+        M2C->setNext(CM3);
+        CM3->setNext(M3M2);
+        M3M2->setNext(M2C);
+        M2C->setFace(C_M3_M2);
+        M3M2->setFace(C_M3_M2);
+        CM3->setFace(C_M3_M2);
 
-        newFaceOne->setEdge(edgeOneSecond);
-        edgeOneSecond->setNext(edgeTwoFirst);
-        edgeTwoFirst->setNext(v23v12);
-        v23v12->setNext(edgeOneSecond);
-        edgeOneSecond->setFace(newFaceOne);
-        v23v12->setFace(newFaceOne);
-        edgeTwoFirst->setFace(newFaceOne);
+        M1_M2_M3->setEdge(M3M1);
+        M3M1->setNext(M1M2);
+        M1M2->setNext(M2M3);
+        M2M3->setNext(M3M1);
+        M3M1->setFace(M1_M2_M3);
+        M1M2->setFace(M1_M2_M3);
+        M2M3->setFace(M1_M2_M3);
 
-        newFaceTwo->setEdge(edgeTwoSecond);
-        edgeTwoSecond->setNext(edgeThreeFirst);
-        edgeThreeFirst->setNext(v31v23);
-        v31v23->setNext(edgeTwoSecond);
-        edgeTwoSecond->setFace(newFaceTwo);
-        v31v23->setFace(newFaceTwo);
-        edgeThreeFirst->setFace(newFaceTwo);
+        this->m_edges.push_back(M1M2);
+        this->m_edges.push_back(M2M1);
+        this->m_edges.push_back(M2M3);
+        this->m_edges.push_back(M3M2);
+        this->m_edges.push_back(M3M1);
+        this->m_edges.push_back(M1M3);
 
-        newFaceThree->setEdge(v31v12);
-        v31v12->setNext(v12v23);
-        v12v23->setNext(v23v31);
-        v23v31->setNext(v31v12);
-        v31v12->setFace(newFaceThree);
-        v12v23->setFace(newFaceThree);
-        v23v31->setFace(newFaceThree);
-
-        this->m_edges.push_back(v12v23);
-        this->m_edges.push_back(v23v12);
-        this->m_edges.push_back(v23v31);
-        this->m_edges.push_back(v31v23);
-        this->m_edges.push_back(v31v12);
-        this->m_edges.push_back(v12v31);
-
-        this->m_faces.push_back(newFaceOne);
-        this->m_faces.push_back(newFaceTwo);
-        this->m_faces.push_back(newFaceThree);
+        this->m_faces.push_back(B_M2_M1);
+        this->m_faces.push_back(C_M3_M2);
+        this->m_faces.push_back(M1_M2_M3);
     }
 
     this->calculateNormals();

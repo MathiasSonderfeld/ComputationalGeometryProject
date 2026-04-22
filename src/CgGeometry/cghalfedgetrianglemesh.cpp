@@ -226,6 +226,7 @@ void CgHalfEdgeTriangleMesh::consistencyCheck() {
 
 void CgHalfEdgeTriangleMesh::subdivide() {
     const int edgeCount = m_edges.size();
+    const int vertexCount = m_vertices.size();
     std::set<CgHeEdge*> set;
 
     for (int i = 0; i < edgeCount; i++) {
@@ -363,7 +364,81 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         this->m_faces.push_back(C_M3_M2);
         this->m_faces.push_back(M1_M2_M3);
     }
+
+    glm::vec3 newPositions[vertexCount];
+    for (int i = 0; i < vertexCount; ++i) {
+        newPositions[i] = calculateNewVerticePosition(dynamic_cast<CgHeVert*>(m_vertices[i]));
+    }
+    for (int i = 0; i < vertexCount; ++i) {
+        dynamic_cast<CgHeVert*>(m_vertices[i])->setPosition(newPositions[i]);
+    }
     this->consistencyCheck();
     this->calculateNormals();
 }
+
+glm::vec3 CgHalfEdgeTriangleMesh::calculateNewVerticePosition(CgHeVert *vertex) {
+    std::vector<glm::vec3> vertices;
+    CgHeEdge* start = vertex->getEdge();
+    CgHeEdge* boundary_prev = nullptr;
+    CgHeEdge* boundary_next = nullptr;
+    bool boundary = false;
+
+    CgHeEdge* edge = start;
+    do {
+        vertices.push_back(edge->getNext()->getVert()->position());
+        if (edge->getPair() == nullptr) {
+            vertices.clear();
+            boundary_next = edge;
+            boundary = true;
+            break;
+        }
+        edge = edge->getPair()->getNext();
+    }
+    while (edge != start);
+
+    // only true if we didnt hit a boundary
+    if (boundary) {
+        edge = start;
+        do {
+            edge = edge->getNext()->getNext();
+            if (edge->getPair() == nullptr) {
+                boundary_prev = edge;
+                break;
+            }
+            edge = edge->getPair();
+        }
+        while (edge != start);
+    }
+
+    if (boundary) {
+        if (boundary_prev == nullptr) {
+            std::cerr << "Boundary vertex without two boundary edges" << std::endl;
+            return glm::vec3(0.0f);
+        }
+        glm::vec3 prev_pos = boundary_prev->getNext()->getVert()->position();
+        glm::vec3 next_pos = boundary_next->getNext()->getVert()->position();
+        glm::vec3 current = vertex->position();
+        glm::vec3 newPos = current * 3.0f/4.0f + prev_pos * 1.0f/8.0f + next_pos * 1.0f/8.0f;
+        return newPos;
+    }
+
+    const float beta = calculateBeta(vertices.size());
+    glm::vec3 sum(0.0f);
+    for (auto vertice : vertices) {
+        sum += vertice;
+    }
+    sum *= beta;
+    sum += (1-vertices.size() * beta) * vertex->position();
+    return sum;
+}
+
+float CgHalfEdgeTriangleMesh::calculateBeta(const int size) {
+    const float inner_cos = cos(2.0f * M_PI / size);
+    const float inner_bracket = 3.0f/8.0f + 1.0f/4.0f * inner_cos;
+    const float inner_square = inner_bracket * inner_bracket;
+    const float outer_bracket = 5.0f/8.0f - inner_square;
+    const float beta = 1.0f/size * outer_bracket;
+    return beta;
+}
+
 

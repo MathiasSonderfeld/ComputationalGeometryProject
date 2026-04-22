@@ -42,6 +42,9 @@ public:
     void consistencyCheck();
     void subdivide();
 
+    static glm::vec3 calculateNewVerticePosition(CgHeVert *vertex);
+
+    static float calculateBeta(int size);
 
 private:
     CgHeVert* createVertex(int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);

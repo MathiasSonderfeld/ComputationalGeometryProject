@@ -41,6 +41,7 @@ CgHalfEdgeTriangleMesh::CgHalfEdgeTriangleMesh(
         this->m_faces.push_back(face);
     }
     this->calculateNormals();
+    this->consistencyCheck();
 }
 
 CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vector<glm::vec3>& vertices, std::unordered_map<int, CgHeVert*>& halfEdgeVertices) {
@@ -159,6 +160,69 @@ glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const {
     return center;
 }
 
+void CgHalfEdgeTriangleMesh::consistencyCheck() {
+    std::cout << "Consistency check" << std::endl;
+    int missingPairs = 0;
+    for (const auto & edge : this->m_edges) {
+        if (edge != edge->getNext()->getNext()->getNext()) {
+            std::cerr << "Inconsistent face loop" << std::endl;
+        }
+        if (edge->getPair() == nullptr) missingPairs++;
+        if (edge->getPair() != nullptr) {
+            if (edge->getPair()->getPair() != edge) {
+                std::cerr << "Inconsistent edge pair" << std::endl;
+            }
+            if (edge->getPair() == edge) {
+                std::cerr << "Inconsistent edge pair reference to self" << std::endl;
+            }
+            if (edge->getPair()->getVert() == edge->getVert()) {
+                std::cerr << "Inconsistent edge pair vertices" << std::endl;
+            }
+            if (edge->getFace() == edge->getPair()->getFace()) {
+                std::cerr << "pair face inconsistency" << std::endl;
+            }
+            if (edge->getVert() != edge->getPair()->getNext()->getVert()) {
+                std::cerr << "pair next vert inconsistent with edge vert" << std::endl;
+            }
+            if (edge->getNext()->getVert() != edge->getPair()->getVert()) {
+                std::cerr << "pair vert inconsistent with edge next vert" << std::endl;
+            }
+        }
+    }
+    std::cout << "Edges without pair: " << missingPairs << " / " << m_edges.size() << std::endl;
+
+    for (const auto & vertex : this->m_vertices) {
+        if (vertex->edge() == nullptr) {
+            std::cerr << "undefined vertex edge reference" << std::endl;
+        }
+        if (vertex->edge() != nullptr && vertex->edge()->vert() != vertex) {
+            std::cerr << "Inconsistent vertex edge reference" << std::endl;
+        }
+    }
+    for (const auto & face : this->m_faces) {
+        if (face->edge() == nullptr) {
+            std::cerr << "undefined face edge reference" << std::endl;
+        }
+        if (face->edge() != nullptr && face->edge()->face() != face) {
+            std::cerr << "Inconsistent face edge reference" << std::endl;
+        }
+    }
+
+    int V = m_vertices.size();
+    int E = m_edges.size() / 2;
+    int F = m_faces.size();
+    std::cout << "V=" << V << " E=" << E << " F=" << F
+              << " => Euler: " << (V - E + F) << " (erwartet: 2)" << std::endl;
+
+    // Für Dreiecksnetze gilt immer: 3F = 2E (innen), also m_edges.size() == 3 * m_faces.size()
+    if (m_edges.size() != 3 * m_faces.size()) {
+        std::cerr << "Edge/Face count mismatch: " << m_edges.size()
+                  << " edges, " << m_faces.size() << " faces" << std::endl;
+    }
+
+
+}
+
 
 void CgHalfEdgeTriangleMesh::subdivide() {
     const int edgeCount = m_edges.size();
@@ -183,9 +247,9 @@ void CgHalfEdgeTriangleMesh::subdivide() {
             CgHeEdge* pair_next_next = current->getPair()->getNext()->getNext();
             glm::vec3 v3 = pair_next_next->getVert()->position();
             glm::vec3 outer = v2+v3;
-            outer *= 1/8;
+            outer *= 1.0f/8.0f;
             glm::vec3 inner = v0+v1;
-            inner *= 3/8;
+            inner *= 3.0f/8.0f;
             newVertPos = inner + outer;
         }
 
@@ -198,6 +262,8 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         newEdge->setNext(next);
         current->setNext(newEdge);
         set.insert(current);
+        m_vertices.push_back(newVert);
+        m_edges.push_back(newEdge);
         if (current->getPair() != nullptr) {
             CgHeEdge* pair = current->getPair();
             CgHeEdge* pairNext = pair->getNext();
@@ -211,9 +277,8 @@ void CgHalfEdgeTriangleMesh::subdivide() {
             current->setPair(newPairEdge);
             newPairEdge->setPair(current);
             set.insert(pair);
+            m_edges.push_back(newPairEdge);
         }
-        m_vertices.push_back(newVert);
-        m_edges.push_back(newEdge);
     }
 
     const int faceCount = m_faces.size();
@@ -298,7 +363,7 @@ void CgHalfEdgeTriangleMesh::subdivide() {
         this->m_faces.push_back(C_M3_M2);
         this->m_faces.push_back(M1_M2_M3);
     }
-
+    this->consistencyCheck();
     this->calculateNormals();
 }
 

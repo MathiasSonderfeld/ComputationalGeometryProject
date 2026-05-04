@@ -32,6 +32,19 @@ public:
     const std::vector<glm::vec3>& getSplatDirX() const override;
     const std::vector<glm::vec3>& getSplatDirY() const override;
 
+    // naive O(n) k-nearest neighbours — iterates all vertices, uses a max-heap of size k
+    std::vector<int> kNearestNeighboursSimple(const glm::vec3& queryPoint, int k) const;
+
+    // PCA normal estimation: fits a local plane to m_k nearest neighbours of each vertex
+    void calculateNormals();
+
+    // consistent normal orientation via MST propagation (Hoppe et al. 1992)
+    // requires calculateNormals() to have been called first
+    void orientNormals();
+
+    int getK() const { return m_k; }
+    void setK(int k) { m_k = k; }
+
 protected:
     // store point data given by constructor
     std::vector<glm::vec3> m_vertices;
@@ -45,6 +58,8 @@ protected:
     // vertex colors can be used to mark certain regions (e.g. nearest neighbors)
     // by a different color, to be constructed by students
     std::vector<glm::vec3> m_vertex_colors;
+
+    int m_k;
 
     // store id and type as provided by CgBaseRenderableObject
     const ObjectType m_type;

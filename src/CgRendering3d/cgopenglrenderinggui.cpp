@@ -455,7 +455,21 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("Aufgabe 2")) {
-        ImGui::Text("Das ist ein weiterer Tab \nadd whatever you need");
+        if (m_point_cloud != nullptr) {
+            CgPointCloud* pc = dynamic_cast<CgPointCloud*>(m_point_cloud);
+            int maxK = static_cast<int>(m_point_cloud->getVertices().size()) - 1;
+            int k = pc->getK();
+            if (ImGui::SliderInt("k Nachbarn", &k, 1, std::min(200, maxK)))
+                pc->setK(k);
+            if (ImGui::Button("Normalen berechnen")) {
+                pc->calculateNormals();
+                m_renderer.removeObject(m_point_cloud);
+                m_renderer.initObject(m_point_cloud);
+                updateRenderNormals(m_point_cloud);
+            }
+        } else {
+            ImGui::Text("Keine Point Cloud geladen.");
+        }
         ImGui::EndTabItem();
     }
 
@@ -578,31 +592,35 @@ void CgOpenGLRenderingGui::updateRenderNormals(CgBaseRenderableObject* obj) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> normals;
 
-    // show normals only for TriangleMesh or PointCloud
-    if ((obj->getType() == TriangleMesh) || (obj->getType() == PointCloud)) {
-        points = dynamic_cast<CgBaseTriangleMesh*>(obj)->getVertices();
-        normals = dynamic_cast<CgBaseTriangleMesh*>(obj)->getVertexNormals();
+    if (obj->getType() == TriangleMesh) {
+        auto* mesh = dynamic_cast<CgBaseTriangleMesh*>(obj);
+        points  = mesh->getVertices();
+        normals = mesh->getVertexNormals();
+    } else if (obj->getType() == PointCloud) {
+        auto* cloud = dynamic_cast<CgBasePointCloud*>(obj);
+        points  = cloud->getVertices();
+        normals = cloud->getVertexNormals();
     }
-    else if (points.size() == normals.size()) {
-        std::vector<glm::vec3> render_normals;
-        //generate lines
-        for (unsigned int i = 0; i < points.size(); i++) {
-            render_normals.push_back(points[i]);
-            render_normals.push_back(points[i] + normals[i] * m_normal_scale);
-        }
 
-        // init a Pointlist rendered als GL_LINES
+    if (points.size() != normals.size() || points.empty())
+        return;
 
-        delete m_render_normals;
-        m_render_normals = new CgPointList(render_normals);
-        m_render_normals->setLineStyle(CG_LINES);
-        m_renderer.initObject(m_render_normals);
+    std::vector<glm::vec3> render_normals;
+    render_normals.reserve(points.size() * 2);
+    for (unsigned int i = 0; i < points.size(); i++) {
+        render_normals.push_back(points[i]);
+        render_normals.push_back(points[i] + normals[i] * m_normal_scale);
     }
+
+    delete m_render_normals;
+    m_render_normals = new CgPointList(render_normals);
+    m_render_normals->setLineStyle(CG_LINES);
+    m_renderer.initObject(m_render_normals);
 }
 
 
 void CgOpenGLRenderingGui::calculateEigenDecomposition3x3() {
-    const glm::mat3 test_matrix = glm::mat3(3., 2., 4., 2., 0., 2., 4., 2., 3.);
+    constexpr glm::mat3 test_matrix = glm::mat3(3., 2., 4., 2., 0., 2., 4., 2., 3.);
     std::cout << glm::to_string(test_matrix) << std::endl;
 
     const CgEigenDecomposition3x3 eigen(test_matrix);

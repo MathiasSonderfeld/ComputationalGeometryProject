@@ -44,6 +44,8 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_half_edge_triangle_mesh = nullptr;
     m_point_cloud = nullptr;
     m_polyline = nullptr;
+    m_splat_mesh = nullptr;
+    m_splat_radius = 0.01f;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -110,6 +112,9 @@ void CgOpenGLRenderingGui::reset() {
 
     delete m_render_normals;
     m_render_normals = nullptr;
+
+    delete m_splat_mesh;
+    m_splat_mesh = nullptr;
 }
 
 void CgOpenGLRenderingGui::renderObjects() {
@@ -134,6 +139,10 @@ void CgOpenGLRenderingGui::renderObjects() {
     // render the point cloud
     if (m_point_cloud != nullptr)
         m_renderer.renderObject(m_point_cloud);
+
+    // render splat mesh
+    if (m_splat_mesh != nullptr)
+        m_renderer.renderObject(m_splat_mesh);
 
     // render picking ray
     if (m_select_ray != nullptr)
@@ -461,11 +470,31 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             int k = pc->getK();
             if (ImGui::SliderInt("k Nachbarn", &k, 1, std::min(200, maxK)))
                 pc->setK(k);
+
             if (ImGui::Button("Normalen berechnen")) {
                 pc->calculateNormals();
                 m_renderer.removeObject(m_point_cloud);
                 m_renderer.initObject(m_point_cloud);
                 updateRenderNormals(m_point_cloud);
+
+                // auto-update splats if they were already computed
+                if (m_splat_mesh != nullptr) {
+                    m_renderer.removeObject(m_splat_mesh);
+                    delete m_splat_mesh;
+                    m_splat_mesh = pc->generateSplatMesh(m_splat_radius);
+                    m_renderer.initObject(m_splat_mesh);
+                }
+            }
+
+            ImGui::Separator();
+            ImGui::SliderFloat("Splat Radius", &m_splat_radius, 0.001f, 0.1f);
+            if (ImGui::Button("Splats berechnen")) {
+                if (m_splat_mesh != nullptr) {
+                    m_renderer.removeObject(m_splat_mesh);
+                    delete m_splat_mesh;
+                }
+                m_splat_mesh = pc->generateSplatMesh(m_splat_radius);
+                m_renderer.initObject(m_splat_mesh);
             }
         } else {
             ImGui::Text("Keine Point Cloud geladen.");

@@ -39,7 +39,7 @@ public:
     //own stuff
     glm::vec3 getCenter() const;
 
-    void consistencyCheck();
+    void consistencyCheck() const;
     void subdivide();
 
     static glm::vec3 calculateNewVerticePosition(CgHeVert *vertex);

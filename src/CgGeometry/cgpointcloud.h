@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include "cgbasepointcloud.h"
 
+class CgTriangleMesh;
 
 class CgPointCloud : public CgBasePointCloud
 {
@@ -45,6 +46,9 @@ public:
     int getK() const { return m_k; }
     void setK(int k) { m_k = k; }
 
+    // generates a triangle mesh with one disc splat per vertex, oriented along the vertex normal
+    CgTriangleMesh* generateSplatMesh(float radius, int segments = 8) const;
+
 protected:
     // store point data given by constructor
     std::vector<glm::vec3> m_vertices;
@@ -59,7 +63,7 @@ protected:
     // by a different color, to be constructed by students
     std::vector<glm::vec3> m_vertex_colors;
 
-    int m_k;
+    int m_k{};
 
     // store id and type as provided by CgBaseRenderableObject
     const ObjectType m_type;

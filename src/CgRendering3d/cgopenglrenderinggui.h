@@ -72,6 +72,8 @@ private:
  CgBaseTriangleMesh* m_triangle_mesh;
  CgBasePointCloud* m_point_cloud;
  CgBaseHalfEdgeTriangleMesh* m_half_edge_triangle_mesh;
+ CgTriangleMesh* m_splat_mesh;
+ float m_splat_radius;
 
  // loading obj files
  static void LoadFromFile(

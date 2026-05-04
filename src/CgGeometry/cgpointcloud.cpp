@@ -1,4 +1,5 @@
 #include "cgpointcloud.h"
+#include "cgtrianglemesh.h"
 #include "../CgMath/cgeigendecomposition3x3.h"
 #include <queue>
 #include <tuple>
@@ -31,7 +32,7 @@ CgPointCloud::CgPointCloud(std::vector<glm::vec3> &vertices) : m_type(PointCloud
             m_vertex_colors.emplace_back(0.0, 0.0, 1.0);
     }
 
-    m_k = std::max(5, (int)std::sqrt((float)m_vertices.size()));
+    m_k = std::max(5, static_cast<int>(std::sqrt(static_cast<float>(m_vertices.size()))));
     calculateNormals();
 }
 
@@ -198,4 +199,54 @@ std::vector<int> CgPointCloud::kNearestNeighboursSimple(const glm::vec3 &queryPo
         queue.pop();
     }
     return result;
+}
+
+CgTriangleMesh* CgPointCloud::generateSplatMesh(const float radius, int segments) const
+{
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> norms;
+    std::vector<unsigned int> idx;
+
+    const int n = static_cast<int>(m_vertices.size());
+    vertices.reserve(n * (segments + 1));
+    norms.reserve(n * (segments + 1));
+    idx.reserve(n * segments * 3);
+
+    constexpr float two_pi = M_PI * 2.0f;
+    constexpr glm::vec3 fallback_normal(0.0f, 1.0f, 0.0f);
+
+    for (int i = 0; i < n; ++i)
+    {
+        const glm::vec3& p = m_vertices[i];
+        const glm::vec3& normal = i < m_vertex_normals.size() ? m_vertex_normals[i] : fallback_normal;
+
+        // tangent frame via Gram-Schmidt
+        glm::vec3 helper = (std::abs(normal.x) < 0.9f) ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0);
+        glm::vec3 t1 = glm::normalize(glm::cross(helper, normal));
+        glm::vec3 t2 = glm::cross(normal, t1);
+
+        unsigned int base = static_cast<unsigned int>(vertices.size());
+
+        // center vertex
+        vertices.push_back(p);
+        norms.push_back(normal);
+
+        // perimeter vertices
+        for (int j = 0; j < segments; ++j)
+        {
+            const float angle = two_pi * j / segments;
+            vertices.push_back(p + radius * (std::cos(angle) * t1 + std::sin(angle) * t2));
+            norms.push_back(normal);
+        }
+
+        // fan triangles: (center, v_j, v_{j+1 mod segments})
+        for (int j = 0; j < segments; ++j)
+        {
+            idx.push_back(base);
+            idx.push_back(base + 1 + j);
+            idx.push_back(base + 1 + (j + 1) % segments);
+        }
+    }
+
+    return new CgTriangleMesh(vertices, norms, idx);
 }

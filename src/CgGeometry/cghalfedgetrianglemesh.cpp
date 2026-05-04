@@ -160,7 +160,7 @@ glm::vec3 CgHalfEdgeTriangleMesh::getCenter() const {
     return center;
 }
 
-void CgHalfEdgeTriangleMesh::consistencyCheck() {
+void CgHalfEdgeTriangleMesh::consistencyCheck() const {
     std::cout << "Consistency check" << std::endl;
     int missingPairs = 0;
     for (const auto & edge : this->m_edges) {

@@ -352,7 +352,7 @@ void CgOpenGLRenderingGui::showOpenGLWindow() {
 
     // change filenames if you want to use other models
     const char* items[] = {
-        "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj", "../models/stumpf.obj", "../models/cube.obj"
+        "../models/bunny.obj", "../models/venus.obj", "../models/airbus.obj", "../models/Man_sitting.obj", "../models/stumpf.obj", "../models/cube.obj", "../models/triangel.obj", "../models/tetrahedron.obj"
     };
     static int item_current = 0;
 

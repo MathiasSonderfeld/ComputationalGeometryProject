@@ -74,6 +74,7 @@ private:
  CgBaseHalfEdgeTriangleMesh* m_half_edge_triangle_mesh;
  CgTriangleMesh* m_splat_mesh;
  float m_splat_radius;
+ float m_pick_max_distance;
 
  // loading obj files
  static void LoadFromFile(

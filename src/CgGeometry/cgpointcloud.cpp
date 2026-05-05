@@ -6,6 +6,7 @@
 #include <functional>
 #include <cmath>
 #include <utility>
+#include <limits>
 
 extern int getUniqueId();
 
@@ -68,8 +69,36 @@ const std::vector<glm::vec3> &CgPointCloud::getSplatDirY() const {
 
 const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm::vec3 &dir,
                                               const double maxDistance) const {
-    // to be implemented
-    return glm::vec3(0.0, 0.0, 0.0);
+    if (m_vertices.empty())
+        return glm::vec3(0.0f);
+
+    float minDistSq = std::numeric_limits<float>::max();
+    int closestIdx = 0;
+
+    for (int i = 0; i < static_cast<int>(m_vertices.size()); ++i) {
+        glm::vec3 diff = m_vertices[i] - origin;
+        float t = glm::dot(diff, dir);
+        glm::vec3 proj = origin + t * dir;
+        glm::vec3 perp = m_vertices[i] - proj;
+        float distSq = glm::dot(perp, perp);
+        if (distSq < minDistSq) {
+            minDistSq = distSq;
+            closestIdx = i;
+        }
+    }
+
+    // reset all colors to the object's uniform default
+    m_vertex_colors.assign(m_vertices.size(), m_color);
+
+    // reject if the closest point is still farther from the ray than allowed
+    if (std::sqrt(minDistSq) > static_cast<float>(maxDistance))
+        return glm::vec3(0.0f);
+
+    // highlight k nearest neighbors of the selected point in red
+    for (int idx : kNearestNeighboursSimple(m_vertices[closestIdx], m_k))
+        m_vertex_colors[idx] = glm::vec3(1.0f, 0.0f, 0.0f);
+
+    return m_vertices[closestIdx];
 }
 
 void CgPointCloud::calculateNormals() {

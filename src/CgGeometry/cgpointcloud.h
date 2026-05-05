@@ -61,7 +61,7 @@ protected:
 
     // vertex colors can be used to mark certain regions (e.g. nearest neighbors)
     // by a different color, to be constructed by students
-    std::vector<glm::vec3> m_vertex_colors;
+    mutable std::vector<glm::vec3> m_vertex_colors;
 
     int m_k{};
 

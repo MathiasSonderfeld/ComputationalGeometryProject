@@ -46,6 +46,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_polyline = nullptr;
     m_splat_mesh = nullptr;
     m_splat_radius = 0.01f;
+    m_pick_max_distance = 0.1f;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -259,6 +260,11 @@ void CgOpenGLRenderingGui::calculatePickRayIntersections(glm::vec3 ray_start, gl
                 m_selected_control_point = obj;
         }
     }
+
+    if (m_point_cloud != nullptr) {
+        m_point_cloud->getClosestPoint(ray_start, ray_direction, m_pick_max_distance);
+        m_renderer.initObject(m_point_cloud);
+    }
 }
 
 void CgOpenGLRenderingGui::moveSelectedObjectInLocalCoordinates(glm::vec3 dir) {
@@ -470,6 +476,8 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             int k = pc->getK();
             if (ImGui::SliderInt("k Nachbarn", &k, 1, std::min(200, maxK)))
                 pc->setK(k);
+
+            ImGui::SliderFloat("Max. Picking-Abstand", &m_pick_max_distance, 0.001f, 1.0f);
 
             if (ImGui::Button("Normalen berechnen")) {
                 pc->calculateNormals();

@@ -116,6 +116,10 @@ void CgOpenGLRenderingGui::reset() {
 
     delete m_splat_mesh;
     m_splat_mesh = nullptr;
+
+    m_renderer.removeObject(m_select_ray);
+    delete m_select_ray;
+    m_select_ray = nullptr;
 }
 
 void CgOpenGLRenderingGui::renderObjects() {

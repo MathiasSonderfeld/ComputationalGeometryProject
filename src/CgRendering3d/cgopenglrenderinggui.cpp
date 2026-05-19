@@ -47,6 +47,8 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_splat_mesh = nullptr;
     m_splat_radius = 0.01f;
     m_pick_max_distance = 0.1f;
+    m_cluster_mesh = nullptr;
+    m_region_growing_angle = 20.0f;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -117,6 +119,9 @@ void CgOpenGLRenderingGui::reset() {
     delete m_splat_mesh;
     m_splat_mesh = nullptr;
 
+    delete m_cluster_mesh;
+    m_cluster_mesh = nullptr;
+
     m_renderer.removeObject(m_select_ray);
     delete m_select_ray;
     m_select_ray = nullptr;
@@ -148,6 +153,10 @@ void CgOpenGLRenderingGui::renderObjects() {
     // render splat mesh
     if (m_splat_mesh != nullptr)
         m_renderer.renderObject(m_splat_mesh);
+
+    // render cluster mesh (region growing result)
+    if (m_cluster_mesh != nullptr)
+        m_renderer.renderObject(m_cluster_mesh);
 
     // render picking ray
     if (m_select_ray != nullptr)
@@ -507,6 +516,19 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
                 }
                 m_splat_mesh = pc->generateSplatMesh(m_splat_radius);
                 m_renderer.initObject(m_splat_mesh);
+            }
+
+            ImGui::Separator();
+            ImGui::SliderFloat("Max. Normalenwinkel", &m_region_growing_angle, 1.0f, 90.0f);
+            if (ImGui::Button("Region Growing berechnen")) {
+                if (m_cluster_mesh != nullptr) {
+                    m_renderer.removeObject(m_cluster_mesh);
+                    delete m_cluster_mesh;
+                    m_cluster_mesh = nullptr;
+                }
+                auto clusters = pc->regionGrowing(m_region_growing_angle);
+                m_cluster_mesh = pc->generateClusterMesh(clusters);
+                m_renderer.initObject(m_cluster_mesh);
             }
         } else {
             ImGui::Text("Keine Point Cloud geladen.");

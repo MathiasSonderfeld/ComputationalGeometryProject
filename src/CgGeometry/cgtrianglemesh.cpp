@@ -39,6 +39,21 @@ CgTriangleMesh::CgTriangleMesh(std::vector<glm::vec3>& vertices, std::vector<glm
         m_vertex_colors.emplace_back(1.0, 0.0, 0.0);
 }
 
+CgTriangleMesh::CgTriangleMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& norm,
+                               const std::vector<unsigned int>& idx, std::vector<glm::vec3>& colors)
+    : m_type(TriangleMesh), m_id(getUniqueId()), m_color(glm::vec3(0.0f, 1.0f, 0.0f))
+{
+    m_vertices.clear(); m_triangle_indices.clear();
+    m_vertex_normals.clear(); m_vertex_colors.clear();
+
+    for (glm::vec3& v : vertices) m_vertices.emplace_back(v);
+    for (glm::vec3& n : norm)     m_vertex_normals.emplace_back(n);
+    for (int i = 0; i < static_cast<int>(m_vertex_normals.size()); i++)
+        m_vertex_normals[i] = glm::normalize(m_vertex_normals[i]);
+    for (unsigned int i : idx)    m_triangle_indices.push_back(i);
+    for (glm::vec3& c : colors)   m_vertex_colors.emplace_back(c);
+}
+
 CgTriangleMesh::~CgTriangleMesh()
 {
     m_vertices.clear();

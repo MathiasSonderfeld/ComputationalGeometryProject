@@ -75,6 +75,8 @@ private:
  CgTriangleMesh* m_splat_mesh;
  float m_splat_radius;
  float m_pick_max_distance;
+ CgTriangleMesh* m_cluster_mesh;
+ float m_region_growing_angle;
 
  // loading obj files
  static void LoadFromFile(

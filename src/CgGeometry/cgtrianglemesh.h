@@ -13,6 +13,8 @@ class CgTriangleMesh : public CgBaseTriangleMesh
 public:
     CgTriangleMesh();
     CgTriangleMesh(std::vector<glm::vec3>& vertices,std::vector<glm::vec3>& norm, const std::vector<unsigned int>& idx);
+    CgTriangleMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& norm,
+                   const std::vector<unsigned int>& idx, std::vector<glm::vec3>& colors);
     
     ~CgTriangleMesh();
 

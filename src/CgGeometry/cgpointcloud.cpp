@@ -95,7 +95,7 @@ const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm
         return glm::vec3(0.0f);
 
     // highlight k nearest neighbors of the selected point in red
-    for (int idx : kNearestNeighboursSimple(m_vertices[closestIdx], m_k))
+    for (int idx: kNearestNeighboursSimple(m_vertices[closestIdx], m_k))
         m_vertex_colors[idx] = glm::vec3(1.0f, 0.0f, 0.0f);
 
     return m_vertices[closestIdx];
@@ -169,7 +169,7 @@ void CgPointCloud::orientNormals() {
 
     // 3. Prim's MST — min-heap on (weight, to, from)
     using vertex_link = std::tuple<float, int, int>;
-    std::priority_queue<vertex_link, std::vector<vertex_link>, std::greater<>> priority_queue;
+    std::priority_queue<vertex_link, std::vector<vertex_link>, std::greater<> > priority_queue;
 
     std::vector<bool> inMST(n, false);
     std::vector<int> parents(n, -1);
@@ -230,8 +230,7 @@ std::vector<int> CgPointCloud::kNearestNeighboursSimple(const glm::vec3 &queryPo
     return result;
 }
 
-CgTriangleMesh* CgPointCloud::generateSplatMesh(const float radius, int segments) const
-{
+CgTriangleMesh *CgPointCloud::generateSplatMesh(const float radius, int segments) const {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> norms;
     std::vector<unsigned int> idx;
@@ -244,10 +243,9 @@ CgTriangleMesh* CgPointCloud::generateSplatMesh(const float radius, int segments
     constexpr float two_pi = M_PI * 2.0f;
     constexpr glm::vec3 fallback_normal(0.0f, 1.0f, 0.0f);
 
-    for (int i = 0; i < n; ++i)
-    {
-        const glm::vec3& p = m_vertices[i];
-        const glm::vec3& normal = i < m_vertex_normals.size() ? m_vertex_normals[i] : fallback_normal;
+    for (int i = 0; i < n; ++i) {
+        const glm::vec3 &p = m_vertices[i];
+        const glm::vec3 &normal = i < m_vertex_normals.size() ? m_vertex_normals[i] : fallback_normal;
 
         // tangent frame via Gram-Schmidt
         glm::vec3 helper = (std::abs(normal.x) < 0.9f) ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0);
@@ -261,16 +259,14 @@ CgTriangleMesh* CgPointCloud::generateSplatMesh(const float radius, int segments
         norms.push_back(normal);
 
         // perimeter vertices
-        for (int j = 0; j < segments; ++j)
-        {
+        for (int j = 0; j < segments; ++j) {
             const float angle = two_pi * j / segments;
             vertices.push_back(p + radius * (std::cos(angle) * t1 + std::sin(angle) * t2));
             norms.push_back(normal);
         }
 
         // fan triangles: (center, v_j, v_{j+1 mod segments})
-        for (int j = 0; j < segments; ++j)
-        {
+        for (int j = 0; j < segments; ++j) {
             idx.push_back(base);
             idx.push_back(base + 1 + j);
             idx.push_back(base + 1 + (j + 1) % segments);
@@ -278,4 +274,135 @@ CgTriangleMesh* CgPointCloud::generateSplatMesh(const float radius, int segments
     }
 
     return new CgTriangleMesh(vertices, norms, idx);
+}
+
+static glm::vec3 hsvToRgb(float hue, float saturation, float value) {
+    if (saturation <= 0.0f) return {value, value, value};
+    hue = std::fmod(hue, 1.0f) * 6.0f;
+    int sectorIndex = static_cast<int>(hue);
+    float sectorFraction = hue - static_cast<float>(sectorIndex);
+    float minComponent = value * (1.0f - saturation);
+    float fallingComponent = value * (1.0f - saturation * sectorFraction);
+    float risingComponent = value * (1.0f - saturation * (1.0f - sectorFraction));
+    switch (sectorIndex) {
+        case 0: return {value, risingComponent, minComponent};
+        case 1: return {fallingComponent, value, minComponent};
+        case 2: return {minComponent, value, risingComponent};
+        case 3: return {minComponent, fallingComponent, value};
+        case 4: return {risingComponent, minComponent, value};
+        default: return {value, minComponent, fallingComponent};
+    }
+}
+
+std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg) const {
+    const int pointCount = static_cast<int>(m_vertices.size());
+    if (pointCount == 0 || m_vertex_normals.size() != static_cast<size_t>(pointCount))
+        return {};
+
+    const float cosThreshold = std::cos(glm::radians(maxAngleDeg));
+    std::vector visited(pointCount, false);
+    std::vector<std::vector<int> > clusters;
+
+    for (int pointIndex = 0; pointIndex < pointCount; ++pointIndex) {
+        if (visited[pointIndex]) continue;
+        clusters.emplace_back();
+        std::vector<int> &currentCluster = clusters.back();
+
+        std::queue<int> queue;
+        queue.push(pointIndex);
+        visited[pointIndex] = true;
+
+        while (!queue.empty()) {
+            int currentPointIndex = queue.front();
+            queue.pop();
+            currentCluster.push_back(currentPointIndex);
+            for (int neighborIndex: kNearestNeighboursSimple(m_vertices[currentPointIndex], m_k)) {
+                if (!visited[neighborIndex] &&
+                    glm::dot(m_vertex_normals[currentPointIndex], m_vertex_normals[neighborIndex]) >= cosThreshold) {
+                    visited[neighborIndex] = true;
+                    queue.push(neighborIndex);
+                }
+            }
+        }
+    }
+    return clusters;
+}
+
+CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<int> > &clusters, int segments) const {
+    std::vector<glm::vec3> vertices, normals, colors;
+    std::vector<unsigned int> indices;
+    const int clusterCount = static_cast<int>(clusters.size());
+    constexpr float two_pi = 2.0f * M_PI;
+    constexpr float epsilon = 1e-8f;
+    constexpr float golden_ratio = 0.618033988f;
+
+    for (int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex) {
+        const std::vector<int> &cluster = clusters[clusterIndex];
+        if (cluster.empty()) continue;
+
+        // centroid and mean normal
+        glm::vec3 centroid(0.0f), meanNormal(0.0f);
+        for (int pointIndex: cluster) {
+            centroid += m_vertices[pointIndex];
+            meanNormal += m_vertex_normals[pointIndex];
+        }
+        const float invClusterSize = 1.0f / static_cast<float>(cluster.size());
+        centroid *= invClusterSize;
+        meanNormal = glm::normalize(meanNormal);
+
+        glm::vec3 helperVector = (std::abs(meanNormal.x) < 0.9f) ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0);
+        glm::vec3 tangent1 = glm::normalize(glm::cross(helperVector, meanNormal));
+        glm::vec3 tangent2 = glm::cross(meanNormal, tangent1);
+
+        float covUU = 0, covUV = 0, covVV = 0;
+        for (int pointIndex: cluster) {
+            glm::vec3 offsetFromCentroid = m_vertices[pointIndex] - centroid;
+            float projU = glm::dot(offsetFromCentroid, tangent1);
+            float projV = glm::dot(offsetFromCentroid, tangent2);
+            covUU += projU * projU;
+            covUV += projU * projV;
+            covVV += projV * projV;
+        }
+        covUU *= invClusterSize;
+        covUV *= invClusterSize;
+        covVV *= invClusterSize;
+
+        // analytic 2x2 eigendecomposition
+        float covHalfDiff = (covUU - covVV) * 0.5f;
+        float discriminant = std::sqrt(std::max(0.0f, covHalfDiff * covHalfDiff + covUV * covUV));
+        float majorEigenvalue = (covUU + covVV) * 0.5f + discriminant;
+        float minorEigenvalue = (covUU + covVV) * 0.5f - discriminant;
+        glm::vec2 majorEigenvector = (std::abs(covUV) > epsilon)
+                                         ? glm::normalize(glm::vec2(majorEigenvalue - covVV, covUV))
+                                         : ((covUU >= covVV) ? glm::vec2(1, 0) : glm::vec2(0, 1));
+
+        // 2-sigma half-axes
+        float semiAxisMajor = 2.0f * std::sqrt(std::max(majorEigenvalue, epsilon));
+        float semiAxisMinor = 2.0f * std::sqrt(std::max(minorEigenvalue, epsilon));
+        glm::vec3 ellipseAxis1 = majorEigenvector.x * tangent1 + majorEigenvector.y * tangent2;
+        glm::vec3 ellipseAxis2 = -majorEigenvector.y * tangent1 + majorEigenvector.x * tangent2;
+
+        // golden-ratio HSV color for perceptual separation
+        glm::vec3 clusterColor = hsvToRgb(std::fmod(clusterIndex * golden_ratio, 1.0f), 0.85f, 0.95f);
+
+        // fan geometry
+        auto fanCenterIndex = static_cast<unsigned int>(vertices.size());
+        vertices.push_back(centroid);
+        normals.push_back(meanNormal);
+        colors.push_back(clusterColor;
+        for (int j = 0; j < segments; ++j) {
+            float angle = two_pi * j / segments;
+            vertices.push_back(
+                centroid + semiAxisMajor * std::cos(angle) * ellipseAxis1 + semiAxisMinor * std::sin(angle) *
+                ellipseAxis2);
+            normals.push_back(meanNormal);
+            colors.push_back(clusterColor);
+        }
+        for (int j = 0; j < segments; ++j) {
+            indices.push_back(fanCenterIndex);
+            indices.push_back(fanCenterIndex + 1 + j);
+            indices.push_back(fanCenterIndex + 1 + (j + 1) % segments);
+        }
+    }
+    return new CgTriangleMesh(vertices, normals, indices, colors);
 }

@@ -49,6 +49,11 @@ public:
     // generates a triangle mesh with one disc splat per vertex, oriented along the vertex normal
     CgTriangleMesh* generateSplatMesh(float radius, int segments = 8) const;
 
+    std::vector<std::vector<int>> regionGrowing(float maxAngleDeg) const;
+
+    CgTriangleMesh* generateClusterMesh(const std::vector<std::vector<int>>& clusters,
+                                        int segments = 32) const;
+
 protected:
     // store point data given by constructor
     std::vector<glm::vec3> m_vertices;

@@ -295,37 +295,7 @@ static glm::vec3 hsvToRgb(float hue, float saturation, float value) {
 }
 
 std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg) const {
-    const int pointCount = static_cast<int>(m_vertices.size());
-    if (pointCount == 0 || m_vertex_normals.size() != static_cast<size_t>(pointCount))
-        return {};
-
-    const float cosThreshold = std::cos(glm::radians(maxAngleDeg));
-    std::vector visited(pointCount, false);
-    std::vector<std::vector<int> > clusters;
-
-    for (int pointIndex = 0; pointIndex < pointCount; ++pointIndex) {
-        if (visited[pointIndex]) continue;
-        clusters.emplace_back();
-        std::vector<int> &currentCluster = clusters.back();
-
-        std::queue<int> queue;
-        queue.push(pointIndex);
-        visited[pointIndex] = true;
-
-        while (!queue.empty()) {
-            int currentPointIndex = queue.front();
-            queue.pop();
-            currentCluster.push_back(currentPointIndex);
-            for (int neighborIndex: kNearestNeighboursSimple(m_vertices[currentPointIndex], m_k)) {
-                if (!visited[neighborIndex] &&
-                    glm::dot(m_vertex_normals[currentPointIndex], m_vertex_normals[neighborIndex]) >= cosThreshold) {
-                    visited[neighborIndex] = true;
-                    queue.push(neighborIndex);
-                }
-            }
-        }
-    }
-    return clusters;
+    return {}; //TODO fix
 }
 
 CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<int> > &clusters, int segments) const {
@@ -389,7 +359,7 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
         auto fanCenterIndex = static_cast<unsigned int>(vertices.size());
         vertices.push_back(centroid);
         normals.push_back(meanNormal);
-        colors.push_back(clusterColor;
+        colors.push_back(clusterColor);
         for (int j = 0; j < segments; ++j) {
             float angle = two_pi * j / segments;
             vertices.push_back(

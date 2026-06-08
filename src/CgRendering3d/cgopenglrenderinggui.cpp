@@ -357,7 +357,16 @@ void CgOpenGLRenderingGui::createRenderOptionsGui() {
     ImGui::Checkbox("enable lighting", &m_lighting_mode);
     m_renderer.setLightingMode(m_lighting_mode);
 
-    ImGui::Checkbox("render normals", &m_show_render_normals);
+    if (ImGui::Checkbox("render normals", &m_show_render_normals)) {
+        if (m_show_render_normals) {
+            if (m_triangle_mesh != nullptr)
+                updateRenderNormals(m_triangle_mesh);
+            else if (m_point_cloud != nullptr)
+                updateRenderNormals(m_point_cloud);
+            else if (m_half_edge_triangle_mesh != nullptr)
+                updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
+        }
+    }
 
     if (ImGui::SliderFloat("normal length", &m_normal_scale, 0.0f, 1.0f)) {
         if (m_show_render_normals && m_render_normals != nullptr) {
@@ -430,6 +439,8 @@ void CgOpenGLRenderingGui::showOpenGLWindow() {
         // generate PointCloud
         m_point_cloud = new CgPointCloud(vertices);
         m_renderer.initObject(m_point_cloud);
+        if (m_show_render_normals)
+            updateRenderNormals(m_point_cloud);
     }
 
     if (ImGui::Button("load as CgHalfEdgeTriangleMesh")) {

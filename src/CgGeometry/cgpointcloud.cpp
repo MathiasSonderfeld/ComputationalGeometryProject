@@ -22,16 +22,8 @@ CgPointCloud::CgPointCloud(std::vector<glm::vec3> &vertices) : m_type(PointCloud
     m_vertex_normals.clear();
     m_vertex_colors.clear();
 
-    for (auto &vert: vertices) {
+    for (auto &vert: vertices)
         m_vertices.emplace_back(vert);
-
-        // for testing purposes
-        // comment if not desired
-        if (vert.x > 0)
-            m_vertex_colors.emplace_back(0.0, 1.0, 0.0);
-        else
-            m_vertex_colors.emplace_back(0.0, 0.0, 1.0);
-    }
 
     m_k = std::max(5, static_cast<int>(std::sqrt(static_cast<float>(m_vertices.size()))));
     calculateNormals();
@@ -337,7 +329,7 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
         covUV *= invClusterSize;
         covVV *= invClusterSize;
 
-        // analytic 2x2 eigendecomposition - TODO fix scaling
+        // analytic 2x2 eigendecomposition
         float covHalfDiff = (covUU - covVV) * 0.5f;
         float discriminant = std::sqrt(std::max(0.0f, covHalfDiff * covHalfDiff + covUV * covUV));
         float majorEigenvalue = (covUU + covVV) * 0.5f + discriminant;
@@ -346,11 +338,19 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
                                          ? glm::normalize(glm::vec2(majorEigenvalue - covVV, covUV))
                                          : ((covUU >= covVV) ? glm::vec2(1, 0) : glm::vec2(0, 1));
 
-        // 2-sigma half-axes
-        float semiAxisMajor = 2.0f * std::sqrt(std::max(majorEigenvalue, epsilon));
-        float semiAxisMinor = 2.0f * std::sqrt(std::max(minorEigenvalue, epsilon));
         glm::vec3 ellipseAxis1 = majorEigenvector.x * tangent1 + majorEigenvector.y * tangent2;
         glm::vec3 ellipseAxis2 = -majorEigenvector.y * tangent1 + majorEigenvector.x * tangent2;
+
+        // max projection onto major eigenvector as semi-major axis
+        float semiAxisMajor = 0.0f;
+        for (int pointIndex : cluster) {
+            float proj = std::abs(glm::dot(m_vertices[pointIndex] - centroid, ellipseAxis1));
+            if (proj > semiAxisMajor) semiAxisMajor = proj;
+        }
+        semiAxisMajor = std::max(semiAxisMajor, epsilon);
+        // scale minor axis by eigenvalue ratio to preserve the local shape
+        float semiAxisMinor = semiAxisMajor * std::sqrt(std::max(minorEigenvalue, epsilon) /
+                                                        std::max(majorEigenvalue, epsilon));
 
         // golden-ratio HSV color for perceptual separation
         glm::vec3 clusterColor = hsvToRgb(std::fmod(clusterIndex * golden_ratio, 1.0f), 0.85f, 0.95f);

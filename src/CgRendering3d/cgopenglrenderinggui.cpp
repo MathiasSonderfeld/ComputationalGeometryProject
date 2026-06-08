@@ -122,9 +122,11 @@ void CgOpenGLRenderingGui::reset() {
     delete m_cluster_mesh;
     m_cluster_mesh = nullptr;
 
-    m_renderer.removeObject(m_select_ray);
-    delete m_select_ray;
-    m_select_ray = nullptr;
+    if (m_select_ray != nullptr) {
+        m_renderer.removeObject(m_select_ray);
+        delete m_select_ray;
+        m_select_ray = nullptr;
+    }
 }
 
 void CgOpenGLRenderingGui::renderObjects() {

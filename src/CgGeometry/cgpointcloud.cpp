@@ -337,7 +337,7 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
         covUV *= invClusterSize;
         covVV *= invClusterSize;
 
-        // analytic 2x2 eigendecomposition
+        // analytic 2x2 eigendecomposition - TODO fix scaling
         float covHalfDiff = (covUU - covVV) * 0.5f;
         float discriminant = std::sqrt(std::max(0.0f, covHalfDiff * covHalfDiff + covUV * covUV));
         float majorEigenvalue = (covUU + covVV) * 0.5f + discriminant;

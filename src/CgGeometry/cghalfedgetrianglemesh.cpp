@@ -385,7 +385,7 @@ glm::vec3 CgHalfEdgeTriangleMesh::calculateNewVerticePosition(CgHeVert *vertex) 
 
     CgHeEdge* edge = start;
     do {
-        vertices.push_back(edge->getNext()->getVert()->position());
+        vertices.push_back(edge->getNext()->getPair()->getNext()->getPair()->getNext()->getNext()->getVert()->position());
         if (edge->getPair() == nullptr) {
             vertices.clear();
             boundary_next = edge;

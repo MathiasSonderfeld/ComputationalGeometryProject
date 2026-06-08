@@ -49,6 +49,8 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_pick_max_distance = 0.1f;
     m_cluster_mesh = nullptr;
     m_region_growing_angle = 20.0f;
+    m_min_cluster_size = 10;
+    m_splat_display_mode = 0;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -152,12 +154,9 @@ void CgOpenGLRenderingGui::renderObjects() {
     if (m_point_cloud != nullptr)
         m_renderer.renderObject(m_point_cloud);
 
-    // render splat mesh
-    if (m_splat_mesh != nullptr)
+    if (m_splat_display_mode == 0 && m_splat_mesh != nullptr)
         m_renderer.renderObject(m_splat_mesh);
-
-    // render cluster mesh (region growing result)
-    if (m_cluster_mesh != nullptr)
+    if (m_splat_display_mode == 1 && m_cluster_mesh != nullptr)
         m_renderer.renderObject(m_cluster_mesh);
 
     // render picking ray
@@ -533,16 +532,24 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
 
             ImGui::Separator();
             ImGui::SliderFloat("Max. Normalenwinkel", &m_region_growing_angle, 1.0f, 90.0f);
+            ImGui::SliderInt("Mindestgroesse Cluster", &m_min_cluster_size, 1, 500);
             if (ImGui::Button("Region Growing berechnen")) {
                 if (m_cluster_mesh != nullptr) {
                     m_renderer.removeObject(m_cluster_mesh);
                     delete m_cluster_mesh;
                     m_cluster_mesh = nullptr;
                 }
-                auto clusters = pc->regionGrowing(m_region_growing_angle);
+                auto clusters = pc->regionGrowing(m_region_growing_angle, m_min_cluster_size);
+                std::cout << "Region Growing: " << clusters.size() << " Cluster" << std::endl;
                 m_cluster_mesh = pc->generateClusterMesh(clusters);
                 m_renderer.initObject(m_cluster_mesh);
             }
+
+            ImGui::Separator();
+            ImGui::Text("Splat-Ansicht:");
+            ImGui::RadioButton("Pro Punkt", &m_splat_display_mode, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("Pro Cluster", &m_splat_display_mode, 1);
         } else {
             ImGui::Text("Keine Point Cloud geladen.");
         }

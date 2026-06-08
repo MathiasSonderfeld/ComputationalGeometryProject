@@ -77,6 +77,8 @@ private:
  float m_pick_max_distance;
  CgTriangleMesh* m_cluster_mesh;
  float m_region_growing_angle;
+ int m_min_cluster_size;
+ int m_splat_display_mode; // 0 = pro Punkt, 1 = pro Cluster
 
  // loading obj files
  static void LoadFromFile(

@@ -4,6 +4,7 @@
 #include <queue>
 #include <tuple>
 #include <functional>
+#include <algorithm>
 #include <cmath>
 #include <utility>
 #include <limits>
@@ -286,8 +287,67 @@ static glm::vec3 hsvToRgb(float hue, float saturation, float value) {
     }
 }
 
-std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg) const {
-    return {}; //TODO fix
+std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg, int minClusterSize) const {
+    const int n = static_cast<int>(m_vertices.size());
+    if (n == 0)
+        return {};
+
+    // (distSq, neighbour, parent)
+    using PQEntry = std::tuple<float, int, int>;
+    using PointPQ = std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<>>;
+    std::vector<PointPQ> point_pq(n);
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < n; ++j) {
+            if (i == j) continue;
+            glm::vec3 d = m_vertices[i] - m_vertices[j];
+            point_pq[i].emplace(glm::dot(d, d), j, i);
+        }
+
+    std::vector assignment(n, -1);
+    std::vector<std::vector<int>> clusters;
+    for (int candidate = 0; candidate < n; ++candidate) {
+        if (assignment[candidate] != -1) continue;
+
+        const int clusterIdx = static_cast<int>(clusters.size());
+        clusters.emplace_back();
+        std::vector<int>& cluster = clusters.back();
+
+        assignment[candidate] = clusterIdx;
+        cluster.push_back(candidate);
+
+        while (!point_pq[candidate].empty() && static_cast<int>(cluster.size()) < minClusterSize) {
+            auto [distSq, j, parent] = point_pq[candidate].top(); point_pq[candidate].pop();
+            if (assignment[j] != -1) continue;
+            float dot = glm::clamp(glm::dot(m_vertex_normals[parent], m_vertex_normals[j]), -1.0f, 1.0f);
+            if (glm::degrees(std::acos(dot)) <= maxAngleDeg) {
+                assignment[j] = clusterIdx;
+                cluster.push_back(j);
+            }
+        }
+    }
+
+    std::vector centroids(clusters.size(), glm::vec3(0.0f));
+    for (int c = 0; c < static_cast<int>(clusters.size()); ++c) {
+        for (const int idx : clusters[c])
+            centroids[c] += m_vertices[idx];
+        if (!clusters[c].empty())
+            centroids[c] /= static_cast<float>(clusters[c].size());
+    }
+
+    for (int i = 0; i < n; ++i) {
+        if (assignment[i] != -1) continue;
+        float minDist = std::numeric_limits<float>::max();
+        int nearestCluster = 0;
+        for (int c = 0; c < static_cast<int>(centroids.size()); ++c) {
+            glm::vec3 d = m_vertices[i] - centroids[c];
+            float dist = glm::dot(d, d);
+            if (dist < minDist) { minDist = dist; nearestCluster = c; }
+        }
+        assignment[i] = nearestCluster;
+        clusters[nearestCluster].push_back(i);
+    }
+
+    return clusters;
 }
 
 CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<int> > &clusters, int segments) const {

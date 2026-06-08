@@ -295,13 +295,23 @@ std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg, int
     // (distSq, neighbour, parent)
     using PQEntry = std::tuple<float, int, int>;
     using PointPQ = std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<>>;
+    const int pqLimit = 2 * minClusterSize;
     std::vector<PointPQ> point_pq(n);
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i) {
+        // max-heap to keep only pqLimit nearest neighbours
+        std::priority_queue<std::pair<float, int>> maxHeap;
         for (int j = 0; j < n; ++j) {
             if (i == j) continue;
             glm::vec3 d = m_vertices[i] - m_vertices[j];
-            point_pq[i].emplace(glm::dot(d, d), j, i);
+            maxHeap.emplace(glm::dot(d, d), j);
+            if (static_cast<int>(maxHeap.size()) > pqLimit)
+                maxHeap.pop();
         }
+        while (!maxHeap.empty()) {
+            auto [dist, j] = maxHeap.top(); maxHeap.pop();
+            point_pq[i].emplace(dist, j, i);
+        }
+    }
 
     std::vector assignment(n, -1);
     std::vector<std::vector<int>> clusters;
@@ -394,9 +404,9 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
         float discriminant = std::sqrt(std::max(0.0f, covHalfDiff * covHalfDiff + covUV * covUV));
         float majorEigenvalue = (covUU + covVV) * 0.5f + discriminant;
         float minorEigenvalue = (covUU + covVV) * 0.5f - discriminant;
-        glm::vec2 majorEigenvector = (std::abs(covUV) > epsilon)
+        glm::vec2 majorEigenvector = std::abs(covUV) > epsilon
                                          ? glm::normalize(glm::vec2(majorEigenvalue - covVV, covUV))
-                                         : ((covUU >= covVV) ? glm::vec2(1, 0) : glm::vec2(0, 1));
+                                         : covUU >= covVV ? glm::vec2(1, 0) : glm::vec2(0, 1);
 
         glm::vec3 ellipseAxis1 = majorEigenvector.x * tangent1 + majorEigenvector.y * tangent2;
         glm::vec3 ellipseAxis2 = -majorEigenvector.y * tangent1 + majorEigenvector.x * tangent2;

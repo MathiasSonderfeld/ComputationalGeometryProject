@@ -410,6 +410,13 @@ void CgFrameBufferShader::handleMouseEvents()
         m_trackball->endDrag();
     }
 
+    // Scroll wheel zoom
+    if (io.MouseWheel != 0.0f)
+    {
+        float scale_factor = 1.0f + io.MouseWheel * 0.1f;
+        m_global_scale_matrix = glm::scale(m_global_scale_matrix, glm::vec3(scale_factor, scale_factor, scale_factor));
+    }
+
     // Picking usage if ctrl Modifier used
     if (io.MouseClicked[0] && (io.KeyCtrl))
     {
@@ -427,11 +434,12 @@ void CgFrameBufferShader::handleMouseEvents()
 
 void CgFrameBufferShader::handleKeyEvents()
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_KeypadAdd))
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_RightBracket))
     {
         m_global_scale_matrix = glm::scale(m_global_scale_matrix, glm::vec3(1.05, 1.05, 1.05));
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract))
+    if (io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_Minus))
     {
         m_global_scale_matrix = glm::scale(m_global_scale_matrix, glm::vec3(0.95, 0.95, 0.95));
     }

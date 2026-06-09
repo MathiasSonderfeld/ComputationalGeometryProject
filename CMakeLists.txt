@@ -79,22 +79,24 @@ add_compile_definitions(GLEW_STATIC)
 file(GLOB CG_BASE CONFIGURE_DEPENDS "src/CgBase/*.cpp" "src/CgBase/*.h")
 file(GLOB CG_GEOMETRY CONFIGURE_DEPENDS "src/CgGeometry/*.cpp" "src/CgGeometry/*.h")
 file(GLOB CG_IMAGE_VIEWER CONFIGURE_DEPENDS "src/CgImageViewer/*.cpp" "src/CgImageViewer/*.h")
+file(GLOB CG_KD_TREE CONFIGURE_DEPENDS "src/CgKdTree/*.cpp" "src/CgKdTree/*.h")
 file(GLOB CG_MATH CONFIGURE_DEPENDS "src/CgMath/*.cpp" "src/CgMath/*.h")
 file(GLOB CG_RENDERING_3D CONFIGURE_DEPENDS "src/CgRendering3d/*.cpp" "src/CgRendering3d/*.h")
 file(GLOB CG_UTILS CONFIGURE_DEPENDS "src/CgUtils/*.cpp" "src/CgUtils/*.h")
 file(GLOB CG_MAIN CONFIGURE_DEPENDS "src/main/*.cpp" "src/main/*.h")
 
-# merge header and source files 
-list(APPEND SOURCES 
- ${CG_BASE} 
- ${CG_GEOMETRY} 
- ${CG_IMAGE_VIEWER} 
- ${CG_MATH} 
+# merge header and source files
+list(APPEND SOURCES
+ ${CG_BASE}
+ ${CG_GEOMETRY}
+ ${CG_IMAGE_VIEWER}
+ ${CG_KD_TREE}
+ ${CG_MATH}
  ${CG_RENDERING_3D}
  ${CG_UTILS}
  ${IMGUI_SOURCES}
  ${GLEW_SOURCES}
- ${CG_MAIN} 
+ ${CG_MAIN}
 )
 
 
@@ -103,6 +105,7 @@ include_directories(./src)
 include_directories(src/CgBase)
 include_directories(src/CgGeometry)
 include_directories(src/CgImageViewer)
+include_directories(src/CgKdTree)
 include_directories(src/CgMath)
 include_directories(src/CgRendering3d)
 include_directories(src/CgUtils)

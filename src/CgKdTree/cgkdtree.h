@@ -15,13 +15,13 @@ public:
     ~CgKdTree();
 
 private:
-    CgKdNode* build(std::vector<int> indices, int depth);
+    CgKdNode* build(const std::vector<int> &indices, int depth);
     [[nodiscard]] CgKdAxis chooseSplitAxis(const std::vector<int>& indices) const;
 
     CgKdNode* m_root;
-    std::vector<glm::vec3> m_points;
-    CgKdSplitStrategy* m_strategy;
+    const std::vector<glm::vec3>& m_points;
     CgKdMedianSplit m_default_strategy;
+    CgKdSplitStrategy* m_strategy;
 };
 
 #endif // CG_KD_TREE_H

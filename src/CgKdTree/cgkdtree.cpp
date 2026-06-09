@@ -5,6 +5,7 @@
 CgKdTree::CgKdTree(const CgPointCloud& cloud, CgKdSplitStrategy* strategy):
     m_root(nullptr),
     m_points(cloud.getVertices()),
+    m_default_strategy(),
     m_strategy(strategy ? strategy : &m_default_strategy)
 {
     std::vector<int> indices(m_points.size());
@@ -36,7 +37,7 @@ CgKdAxis CgKdTree::chooseSplitAxis(const std::vector<int>& indices) const
     return CgKdAxis::Z;
 }
 
-CgKdNode* CgKdTree::build(std::vector<int> indices, const int depth)
+CgKdNode* CgKdTree::build(const std::vector<int> &indices, const int depth)
 {
     if (indices.empty()) return nullptr;
     if (indices.size() == 1) return new CgKdNode(indices[0]);
@@ -57,7 +58,7 @@ CgKdNode* CgKdTree::build(std::vector<int> indices, const int depth)
     }
 
     CgKdNode* node = new CgKdNode(axis, splitValue, std::move(onPlane));
-    node->setLeft(build(std::move(left),  depth + 1));
-    node->setRight(build(std::move(right), depth + 1));
+    node->setLeft(build(left,  depth + 1));
+    node->setRight(build(right, depth + 1));
     return node;
 }

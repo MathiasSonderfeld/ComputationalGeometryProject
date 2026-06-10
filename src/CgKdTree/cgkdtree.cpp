@@ -48,7 +48,7 @@ CgKdNode* CgKdTree::build(const std::vector<int> &indices, const int depth)
     const int axisIdx = static_cast<int>(axis);
     std::vector<int> left, right, onPlane;
     for (int i : indices) {
-        float coord = m_points[i][axisIdx];
+        const float coord = m_points[i][axisIdx];
         if (coord < splitValue)
             left.push_back(i);
         else if (coord > splitValue)

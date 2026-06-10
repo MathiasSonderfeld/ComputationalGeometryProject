@@ -28,8 +28,9 @@ public:
     
     void setLineStyle(LineStyle newVal) override;
     const LineStyle getLineStyle() const override;
-  
+
     void setLineWidth(int);
+    void setColor(const glm::vec3& color);
     
 
 private:
@@ -52,6 +53,7 @@ inline const LineStyle  CgPointList::getLineStyle() const {return m_line_style;}
 inline ObjectType  CgPointList::getType() const {return m_type;}
 inline unsigned int CgPointList::getID() const {return m_id;}
 inline glm::vec3 CgPointList::getColor() const {return m_color;}
+inline void CgPointList::setColor(const glm::vec3& color) {m_color = color;}
 
 #endif
 

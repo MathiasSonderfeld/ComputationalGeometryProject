@@ -7,6 +7,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "cgkdmediansplit.h"
+#include "cgkdaxisstrategy.h"
 #include "cgaabb.h"
 
 class CgPointCloud;
@@ -20,7 +21,9 @@ struct CgKdSplitRect {
 class CgKdTree
 {
 public:
-    explicit CgKdTree(const CgPointCloud& cloud, CgKdSplitStrategy* strategy = nullptr);
+    explicit CgKdTree(const CgPointCloud& cloud,
+                      CgKdSplitStrategy* strategy = nullptr,
+                      CgKdAxisStrategy* axisStrategy = nullptr);
     ~CgKdTree();
 
     [[nodiscard]] std::vector<int> knn(int queryIdx, int k) const;
@@ -30,7 +33,6 @@ private:
     using KnnPQ = std::priority_queue<std::pair<float, int>>;
 
     CgKdNode* build(const std::vector<int>& indices, int depth);
-    [[nodiscard]] CgKdAxis chooseSplitAxis(const std::vector<int>& indices) const;
 
     static void collectSplitRects(const CgKdNode* node, const CgAABB &bounds, int depth, std::vector<CgKdSplitRect>& result);
 
@@ -42,6 +44,7 @@ private:
     CgKdNode* m_root;
     const std::vector<glm::vec3>& m_points;
     CgKdSplitStrategy* m_strategy;
+    CgKdAxisStrategy* m_axis_strategy;
 };
 
 #endif // CG_KD_TREE_H

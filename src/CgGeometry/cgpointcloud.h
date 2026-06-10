@@ -57,7 +57,9 @@ public:
     CgTriangleMesh* generateClusterMesh(const std::vector<std::vector<int>>& clusters,
                                         int segments = 32, float scale = 1.0f) const;
 
-    CgPointList* generateSplitPlaneLines() const;
+    // builds one CgPointList per individual split plane, each with a distinct color.
+    // grouped by depth: outer index == depth, so callers can reveal levels incrementally
+    std::vector<std::vector<CgPointList*>> generateSplitPlaneLines() const;
 
     const CgAABB& getAABB() const { return m_aabb; }
 

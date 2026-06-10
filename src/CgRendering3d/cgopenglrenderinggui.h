@@ -122,7 +122,12 @@ private:
  *************************************************************/
 
  CgPointList* m_select_ray; //style CG_LINES
- CgPointList* m_split_plane_lines; //style CG_LINES
+
+ // KD-tree split planes: one CgPointList per individual plane, each its own color.
+ // grouped by depth (outer index == depth), pre-built once and revealed
+ // up to m_split_plane_max_depth
+ std::vector<std::vector<CgPointList*>> m_split_plane_lines; //style CG_LINES
+ int m_split_plane_max_depth;
 
 
  /* ***********************************************************

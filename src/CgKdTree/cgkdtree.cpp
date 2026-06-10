@@ -1,14 +1,19 @@
 #include "cgkdtree.h"
 #include "cgkdnode.h"
+#include "cgkdroundrobinaxis.h"
 #include "cgpointcloud.h"
 #include <algorithm>
 #include <cmath>
 
-CgKdTree::CgKdTree(const CgPointCloud &cloud, CgKdSplitStrategy *strategy) : m_root(nullptr),
-                                                                             m_points(cloud.getVertices()),
-                                                                             m_strategy(strategy
-                                                                                     ? strategy
-                                                                                     : new CgKdMedianSplit()) {
+CgKdTree::CgKdTree(const CgPointCloud &cloud, CgKdSplitStrategy *strategy,
+                   CgKdAxisStrategy *axisStrategy) : m_root(nullptr),
+                                                     m_points(cloud.getVertices()),
+                                                     m_strategy(strategy
+                                                             ? strategy
+                                                             : new CgKdMedianSplit()),
+                                                     m_axis_strategy(axisStrategy
+                                                             ? axisStrategy
+                                                             : new CgKdRoundRobinAxis()) {
     std::vector<int> indices(m_points.size());
     for (int i = 0; i < static_cast<int>(m_points.size()); ++i)
         indices[i] = i;
@@ -18,29 +23,13 @@ CgKdTree::CgKdTree(const CgPointCloud &cloud, CgKdSplitStrategy *strategy) : m_r
 CgKdTree::~CgKdTree() {
     delete m_root;
     delete m_strategy;
-}
-
-CgKdAxis CgKdTree::chooseSplitAxis(const std::vector<int> &indices) const {
-    glm::vec3 minPt = m_points[indices[0]];
-    glm::vec3 maxPt = m_points[indices[0]];
-    for (const int i: indices) {
-        minPt = glm::min(minPt, m_points[i]);
-        maxPt = glm::max(maxPt, m_points[i]);
-    }
-    const glm::vec3 extent = maxPt - minPt;
-    if (extent.x >= extent.y && extent.x >= extent.z) {
-        return CgKdAxis::X;
-    }
-    if (extent.y >= extent.z) {
-        return CgKdAxis::Y;
-    }
-    return CgKdAxis::Z;
+    delete m_axis_strategy;
 }
 
 CgKdNode *CgKdTree::build(const std::vector<int> &indices, const int depth) {
     if (indices.empty()) return nullptr;
 
-    CgKdAxis axis = chooseSplitAxis(indices);
+    CgKdAxis axis = m_axis_strategy->chooseAxis(m_points, indices, depth);
     const float splitValue = m_strategy->computeSplitValue(m_points, indices, axis);
 
     const int axisIdx = static_cast<int>(axis);

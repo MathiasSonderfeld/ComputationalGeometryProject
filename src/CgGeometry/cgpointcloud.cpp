@@ -298,6 +298,12 @@ static glm::vec3 hsvToRgb(float hue, const float saturation, float value) {
     }
 }
 
+// golden-ratio HSV color: consecutive indices map to perceptually well-separated hues
+static glm::vec3 distinctColor(const int index) {
+    constexpr float golden_ratio = 0.618033988f;
+    return hsvToRgb(std::fmod(static_cast<float>(index) * golden_ratio, 1.0f), 0.85f, 0.95f);
+}
+
 std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg, int minClusterSize) const {
     const int n = static_cast<int>(m_vertices.size());
     if (n == 0)
@@ -377,7 +383,6 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
     const int clusterCount = static_cast<int>(clusters.size());
     constexpr float two_pi = 2.0f * M_PI;
     constexpr float epsilon = 1e-8f;
-    constexpr float golden_ratio = 0.618033988f;
 
     for (int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex) {
         const std::vector<int> &cluster = clusters[clusterIndex];
@@ -434,7 +439,7 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
                                                         std::max(majorEigenvalue, epsilon));
 
         // golden-ratio HSV color for perceptual separation
-        glm::vec3 clusterColor = hsvToRgb(std::fmod(clusterIndex * golden_ratio, 1.0f), 0.85f, 0.95f);
+        glm::vec3 clusterColor = distinctColor(clusterIndex);
 
         // fan geometry
         auto fanCenterIndex = static_cast<unsigned int>(vertices.size());
@@ -458,17 +463,30 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
     return new CgTriangleMesh(vertices, normals, indices, colors);
 }
 
-CgPointList* CgPointCloud::generateSplitPlaneLines() const {
+std::vector<std::vector<CgPointList*>> CgPointCloud::generateSplitPlaneLines() const {
     const auto rects = m_kd_tree->getSplitPlaneRects(m_aabb);
-    std::vector<glm::vec3> vertices;
-    vertices.reserve(rects.size() * 8);
+
+    int maxDepth = 0;
+    for (const auto& rect : rects)
+        maxDepth = std::max(maxDepth, rect.depth);
+
+    // one CgPointList per individual split plane, each with its own distinct
+    // color. planes are grouped by depth (outer index) so the caller can
+    // reveal levels incrementally; building happens once, the depth slider
+    // only changes which groups get rendered (no rebuild)
+    std::vector<std::vector<CgPointList*>> result(maxDepth + 1);
+    int colorIndex = 0;
     for (const auto&[corners, depth] : rects) {
-        vertices.push_back(corners[0]); vertices.push_back(corners[1]);
-        vertices.push_back(corners[1]); vertices.push_back(corners[2]);
-        vertices.push_back(corners[2]); vertices.push_back(corners[3]);
-        vertices.push_back(corners[3]); vertices.push_back(corners[0]);
+        std::vector<glm::vec3> v;
+        v.reserve(8);
+        for (int e = 0; e < 4; ++e) {
+            v.push_back(corners[e]);
+            v.push_back(corners[(e + 1) % 4]);
+        }
+        CgPointList* lines = new CgPointList(v);
+        lines->setLineStyle(CG_LINES);
+        lines->setColor(distinctColor(colorIndex++));
+        result[depth].push_back(lines);
     }
-    CgPointList* lines = new CgPointList(vertices);
-    lines->setLineStyle(CG_LINES);
-    return lines;
+    return result;
 }

@@ -37,7 +37,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_show_render_normals = false;
 
     m_select_ray = nullptr;
-    m_split_plane_lines = nullptr;
+    m_split_plane_max_depth = 0;
     m_render_normals = nullptr;
 
     m_triangle_fan = nullptr;
@@ -132,11 +132,14 @@ void CgOpenGLRenderingGui::reset() {
         m_select_ray = nullptr;
     }
 
-    if (m_split_plane_lines != nullptr) {
-        m_renderer.removeObject(m_split_plane_lines);
-        delete m_split_plane_lines;
-        m_split_plane_lines = nullptr;
+    for (auto& depthLevel : m_split_plane_lines) {
+        for (auto* lines : depthLevel) {
+            m_renderer.removeObject(lines);
+            delete lines;
+        }
     }
+    m_split_plane_lines.clear();
+    m_split_plane_max_depth = 0;
 }
 
 void CgOpenGLRenderingGui::renderObjects() {
@@ -171,8 +174,9 @@ void CgOpenGLRenderingGui::renderObjects() {
     if (m_select_ray != nullptr)
         m_renderer.renderObject(m_select_ray);
 
-    if (m_split_plane_lines != nullptr)
-        m_renderer.renderObject(m_split_plane_lines);
+    for (int d = 0; d < static_cast<int>(m_split_plane_lines.size()) && d <= m_split_plane_max_depth; ++d)
+        for (auto* lines : m_split_plane_lines[d])
+            m_renderer.renderObject(lines);
 
     // render objects for control polygon example
     renderControlPolygonExample();
@@ -584,16 +588,30 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             ImGui::Text("KD-Tree Visualisierung");
             ImGui::Separator();
 
-            bool show_split_planes = (m_split_plane_lines != nullptr);
+            bool show_split_planes = !m_split_plane_lines.empty();
             if (ImGui::Checkbox("Trennebenen anzeigen", &show_split_planes)) {
                 if (show_split_planes) {
+                    // build every plane once; the slider below just limits
+                    // how many depth levels get rendered (no rebuild on change)
                     m_split_plane_lines = pc->generateSplitPlaneLines();
-                    m_renderer.initObject(m_split_plane_lines);
-                } else if (m_split_plane_lines != nullptr) {
-                    m_renderer.removeObject(m_split_plane_lines);
-                    delete m_split_plane_lines;
-                    m_split_plane_lines = nullptr;
+                    for (auto& depthLevel : m_split_plane_lines)
+                        for (auto* lines : depthLevel)
+                            m_renderer.initObject(lines);
+                    m_split_plane_max_depth = static_cast<int>(m_split_plane_lines.size()) - 1;
+                } else {
+                    for (auto& depthLevel : m_split_plane_lines)
+                        for (auto* lines : depthLevel) {
+                            m_renderer.removeObject(lines);
+                            delete lines;
+                        }
+                    m_split_plane_lines.clear();
+                    m_split_plane_max_depth = 0;
                 }
+            }
+
+            if (!m_split_plane_lines.empty()) {
+                const int deepest = static_cast<int>(m_split_plane_lines.size()) - 1;
+                ImGui::SliderInt("Max. Tiefe", &m_split_plane_max_depth, 0, deepest);
             }
         } else {
             ImGui::Text("Keine Point Cloud geladen.");

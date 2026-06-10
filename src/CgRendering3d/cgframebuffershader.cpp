@@ -223,10 +223,15 @@ void CgFrameBufferShader::initObject(CgBaseRenderableObject* obj)
 
         std::vector<VertexHolder> object_vertices;
 
+        // carry the object color as a per-vertex attribute as well: with lighting
+        // off the shader reads the vertex color, not the mycolor uniform, and the
+        // 2-arg VertexHolder ctor would otherwise default every vertex to blue
+        const glm::vec3 col = obj->getColor();
+
         object_vertices.reserve(points.size());
         for (glm::vec3& point : points)
         {
-            object_vertices.emplace_back(point, glm::vec3(0.0, 0.0, 0.0));
+            object_vertices.emplace_back(point, glm::vec3(0.0, 0.0, 0.0), col);
         }
 
         object_buffer->create_vertex_buffers(object_vertices);

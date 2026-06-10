@@ -79,6 +79,7 @@ const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm
     // branch-and-bound over the KD-tree instead of scanning every point.
     // maxDistance doubles as the picking radius: -1 means nothing was close enough
     const int closestIdx = m_kd_tree->closestToLine(origin, dir, m_aabb, maxDistance);
+    m_selected_index = closestIdx;
 
     // reset all colors to the object's uniform default
     m_vertex_colors.assign(m_vertices.size(), m_color);
@@ -477,4 +478,53 @@ std::vector<std::vector<CgPointList*>> CgPointCloud::generateSplitPlaneLines() c
         result[depth].push_back(lines);
     }
     return result;
+}
+
+CgMlsSurface CgPointCloud::mlsSurfaceAt(const int index, const int degree) const {
+    // samples = the vertex itself plus its k nearest neighbours
+    std::vector<glm::vec3> samples;
+    samples.push_back(m_vertices[index]);
+    for (const int nb: m_kd_tree->knn(index, m_k))
+        samples.push_back(m_vertices[nb]);
+
+    return fitMlsSurface(m_vertices[index], m_vertex_normals[index], samples, degree);
+}
+
+void CgPointCloud::rebuildSpatialStructures() {
+    if (m_vertices.empty())
+        return;
+
+    m_aabb.min = m_aabb.max = m_vertices[0];
+    for (const auto& v: m_vertices) {
+        m_aabb.min = glm::min(m_aabb.min, v);
+        m_aabb.max = glm::max(m_aabb.max, v);
+    }
+
+    delete m_kd_tree;
+    m_kd_tree = new CgKdTree(*this);
+}
+
+void CgPointCloud::setVertexPosition(const int index, const glm::vec3& position) {
+    m_vertices[index] = position;
+    rebuildSpatialStructures();
+}
+
+void CgPointCloud::smoothAllMLS(const int degree) {
+    const int n = static_cast<int>(m_vertices.size());
+    if (n == 0)
+        return;
+
+    // double-buffered: every fit reads the OLD positions (via the current
+    // kd-tree), all updates land in newPositions and are committed at the end
+    std::vector<glm::vec3> newPositions(n);
+    for (int i = 0; i < n; ++i) {
+        const CgMlsSurface surface = mlsSurfaceAt(i, degree);
+        // the vertex sits at (u,v) = (0,0) in its own frame, so its smoothed
+        // height is P(0,0); positionAt lifts that back to world space
+        newPositions[i] = surface.positionAt(0.0f, 0.0f);
+    }
+
+    m_vertices = std::move(newPositions);
+    rebuildSpatialStructures();
+    calculateNormals();
 }

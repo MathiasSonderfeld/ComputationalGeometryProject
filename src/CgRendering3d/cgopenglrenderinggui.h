@@ -15,6 +15,7 @@ class CgBasePointCloud;
 class CgTriangleMesh;
 class CgTriangleFan;
 class CgPointCloud;
+struct CgMlsSurface;
 
 class CgOpenGLRenderingGui : public CgBaseGui {
 public:
@@ -81,6 +82,15 @@ private:
  float m_cluster_scale;
  int m_min_cluster_size;
  int m_splat_display_mode; // 0 = pro Punkt, 1 = pro Cluster
+
+ // MLS smoothing (Aufgabe 4)
+ CgTriangleMesh* m_mls_patch_mesh; // fitted polynomial surface of the picked point
+ int m_mls_degree;
+ int m_mls_grid_res;               // sampling resolution of the patch mesh
+ bool m_mls_pick_active;           // when true, ctrl-click runs MLS on the hit vertex
+ // builds the fitted polynomial as a sampled triangle mesh over its 2D param bounds
+ CgTriangleMesh* buildMlsPatchMesh(const CgMlsSurface& surface, int gridRes) const;
+ void runMlsPick(const glm::vec3& ray_start, const glm::vec3& ray_direction);
 
  // loading obj files
  static void LoadFromFile(

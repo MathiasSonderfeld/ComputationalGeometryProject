@@ -441,4 +441,117 @@ float CgHalfEdgeTriangleMesh::calculateBeta(const int size) {
     return beta;
 }
 
+std::vector<std::vector<int>> CgHalfEdgeTriangleMesh::buildVertexAdjacency() const {
+    const int n = static_cast<int>(m_vertices.size());
+
+    // m_vertices is filled in face order, so vert->index() is not necessarily the
+    // slot in m_vertices. map index() -> slot so the adjacency stays array-aligned
+    std::unordered_map<int, int> indexToSlot;
+    indexToSlot.reserve(n);
+    for (int i = 0; i < n; ++i)
+        indexToSlot[m_vertices[i]->index()] = i;
+
+    std::vector<std::set<int>> sets(n);
+
+    // every triangle face connects its three corner vertices to each other
+    for (const CgBaseHeFace* face: m_faces) {
+        const CgBaseHeEdge* e0 = face->edge();
+        const CgBaseHeEdge* e1 = e0->next();
+        const CgBaseHeEdge* e2 = e1->next();
+        const int a = indexToSlot[e0->vert()->index()];
+        const int b = indexToSlot[e1->vert()->index()];
+        const int c = indexToSlot[e2->vert()->index()];
+        sets[a].insert(b); sets[a].insert(c);
+        sets[b].insert(a); sets[b].insert(c);
+        sets[c].insert(a); sets[c].insert(b);
+    }
+
+    std::vector<std::vector<int>> adjacency(n);
+    for (int i = 0; i < n; ++i)
+        adjacency[i].assign(sets[i].begin(), sets[i].end());
+    return adjacency;
+}
+
+std::vector<int> CgHalfEdgeTriangleMesh::twoRingNeighbours(const int index) const {
+    const auto adjacency = buildVertexAdjacency();
+
+    // 1-ring plus the 1-ring of every 1-ring neighbour = everything within 2 edges
+    std::set<int> ring;
+    for (const int n1: adjacency[index]) {
+        ring.insert(n1);
+        for (const int n2: adjacency[n1])
+            ring.insert(n2);
+    }
+    ring.erase(index);
+    return std::vector<int>(ring.begin(), ring.end());
+}
+
+CgMlsSurface CgHalfEdgeTriangleMesh::mlsSurfaceAt(const int index, const int degree) const {
+    const glm::vec3 center = m_vertices[index]->position();
+    std::vector<glm::vec3> samples;
+    samples.push_back(center);
+    for (const int nb: twoRingNeighbours(index))
+        samples.push_back(m_vertices[nb]->position());
+
+    return fitMlsSurface(center, m_vertices[index]->normal(), samples, degree);
+}
+
+int CgHalfEdgeTriangleMesh::getClosestVertex(const glm::vec3& origin, const glm::vec3& dir,
+                                             const double maxDistance) const {
+    const glm::vec3 d = glm::normalize(dir);
+    float bestDistSq = static_cast<float>(maxDistance * maxDistance);
+    int bestIdx = -1;
+
+    for (int i = 0; i < static_cast<int>(m_vertices.size()); ++i) {
+        const glm::vec3 w = m_vertices[i]->position() - origin;
+        const float parallel = glm::dot(w, d);
+        const float perpSq = glm::dot(w, w) - parallel * parallel;
+        if (perpSq < bestDistSq) {
+            bestDistSq = perpSq;
+            bestIdx = i;
+        }
+    }
+    return bestIdx;
+}
+
+void CgHalfEdgeTriangleMesh::setVertexPosition(const int index, const glm::vec3& position) {
+    dynamic_cast<CgHeVert*>(m_vertices[index])->setPosition(position);
+    calculateNormals();
+}
+
+void CgHalfEdgeTriangleMesh::smoothAllMLS(const int degree) {
+    const int n = static_cast<int>(m_vertices.size());
+    if (n == 0)
+        return;
+
+    // topology is unchanged by smoothing, so build the adjacency only once
+    const auto adjacency = buildVertexAdjacency();
+
+    // double-buffered: all fits read the OLD positions, new ones committed after
+    std::vector<glm::vec3> newPositions(n);
+    for (int i = 0; i < n; ++i) {
+        std::set<int> ring;
+        for (const int n1: adjacency[i]) {
+            ring.insert(n1);
+            for (const int n2: adjacency[n1])
+                ring.insert(n2);
+        }
+        ring.erase(i);
+
+        const glm::vec3 center = m_vertices[i]->position();
+        std::vector<glm::vec3> samples;
+        samples.push_back(center);
+        for (const int nb: ring)
+            samples.push_back(m_vertices[nb]->position());
+
+        const CgMlsSurface surface = fitMlsSurface(center, m_vertices[i]->normal(), samples, degree);
+        newPositions[i] = surface.positionAt(0.0f, 0.0f);
+    }
+
+    for (int i = 0; i < n; ++i)
+        dynamic_cast<CgHeVert*>(m_vertices[i])->setPosition(newPositions[i]);
+
+    calculateNormals();
+}
+
 

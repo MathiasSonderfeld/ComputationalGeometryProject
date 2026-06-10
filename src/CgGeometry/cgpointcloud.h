@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include "cgbasepointcloud.h"
 #include "cgaabb.h"
+#include "../CgMath/cgmlsfit.h"
 
 class CgTriangleMesh;
 class CgPointList;
@@ -54,6 +55,21 @@ public:
 
     std::vector<std::vector<int>> regionGrowing(float maxAngleDeg, int minClusterSize = 1) const;
 
+    // index of the vertex last selected by getClosestPoint, or -1
+    int getSelectedIndex() const { return m_selected_index; }
+
+    // Moving Least Squares: fit a local polynomial surface to vertex `index`
+    // and its k nearest neighbours (the vertex itself is included as a sample)
+    CgMlsSurface mlsSurfaceAt(int index, int degree) const;
+
+    // move a single vertex onto a position (e.g. its MLS-smoothed position) and
+    // rebuild the spatial structures so later queries stay correct
+    void setVertexPosition(int index, const glm::vec3& position);
+
+    // smooth every vertex with MLS at once. computed double-buffered (old
+    // positions feed all fits, new positions are committed together)
+    void smoothAllMLS(int degree);
+
     CgTriangleMesh* generateClusterMesh(const std::vector<std::vector<int>>& clusters,
                                         int segments = 32, float scale = 1.0f) const;
 
@@ -80,6 +96,10 @@ protected:
     CgAABB m_aabb{};
     int m_k{};
     CgKdTree* m_kd_tree;
+    mutable int m_selected_index = -1;
+
+    // recompute the AABB and rebuild the kd-tree after vertex positions change
+    void rebuildSpatialStructures();
 
     // store id and type as provided by CgBaseRenderableObject
     const ObjectType m_type;

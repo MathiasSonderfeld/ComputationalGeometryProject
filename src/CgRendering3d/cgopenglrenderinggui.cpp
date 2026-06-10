@@ -18,6 +18,7 @@
 #include "cgpointcloud.h"
 #include "cgpointlist.h"
 #include "cgsphere.h"
+#include "../CgMath/cgmlsfit.h"
 
 // math lib for matrix decomposition
 #include "Eigen/SVD"
@@ -53,6 +54,11 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_cluster_scale = 1.0f;
     m_min_cluster_size = 10;
     m_splat_display_mode = 0;
+
+    m_mls_patch_mesh = nullptr;
+    m_mls_degree = 2;
+    m_mls_grid_res = 16;
+    m_mls_pick_active = false;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -126,6 +132,9 @@ void CgOpenGLRenderingGui::reset() {
     delete m_cluster_mesh;
     m_cluster_mesh = nullptr;
 
+    delete m_mls_patch_mesh;
+    m_mls_patch_mesh = nullptr;
+
     if (m_select_ray != nullptr) {
         m_renderer.removeObject(m_select_ray);
         delete m_select_ray;
@@ -169,6 +178,9 @@ void CgOpenGLRenderingGui::renderObjects() {
         m_renderer.renderObject(m_splat_mesh);
     if (m_splat_display_mode == 1 && m_cluster_mesh != nullptr)
         m_renderer.renderObject(m_cluster_mesh);
+
+    if (m_mls_patch_mesh != nullptr)
+        m_renderer.renderObject(m_mls_patch_mesh);
 
     // render picking ray
     if (m_select_ray != nullptr)
@@ -294,6 +306,94 @@ void CgOpenGLRenderingGui::calculatePickRayIntersections(glm::vec3 ray_start, gl
         m_point_cloud->getClosestPoint(ray_start, ray_direction, m_pick_max_distance);
         m_renderer.initObject(m_point_cloud);
     }
+
+    if (m_mls_pick_active)
+        runMlsPick(ray_start, ray_direction);
+}
+
+void CgOpenGLRenderingGui::runMlsPick(const glm::vec3& ray_start, const glm::vec3& ray_direction) {
+    // drop the previous fitted patch
+    if (m_mls_patch_mesh != nullptr) {
+        m_renderer.removeObject(m_mls_patch_mesh);
+        delete m_mls_patch_mesh;
+        m_mls_patch_mesh = nullptr;
+    }
+
+    if (m_point_cloud != nullptr) {
+        auto* pc = dynamic_cast<CgPointCloud*>(m_point_cloud);
+        const int idx = pc->getSelectedIndex(); // set by getClosestPoint above
+        if (idx < 0)
+            return;
+
+        const CgMlsSurface surface = pc->mlsSurfaceAt(idx, m_mls_degree);
+        if (!surface.valid())
+            return;
+
+        m_mls_patch_mesh = buildMlsPatchMesh(surface, m_mls_grid_res);
+        m_renderer.initObject(m_mls_patch_mesh);
+
+        // move the picked point onto its smoothed position (P at its own (0,0))
+        pc->setVertexPosition(idx, surface.positionAt(0.0f, 0.0f));
+        m_renderer.removeObject(m_point_cloud);
+        m_renderer.initObject(m_point_cloud);
+        return;
+    }
+
+    if (m_half_edge_triangle_mesh != nullptr) {
+        auto* mesh = dynamic_cast<CgHalfEdgeTriangleMesh*>(m_half_edge_triangle_mesh);
+        const int idx = mesh->getClosestVertex(ray_start, ray_direction, 1.0e30);
+        if (idx < 0)
+            return;
+
+        const CgMlsSurface surface = mesh->mlsSurfaceAt(idx, m_mls_degree);
+        if (!surface.valid())
+            return;
+
+        m_mls_patch_mesh = buildMlsPatchMesh(surface, m_mls_grid_res);
+        m_renderer.initObject(m_mls_patch_mesh);
+
+        mesh->setVertexPosition(idx, surface.positionAt(0.0f, 0.0f));
+        m_renderer.removeObject(m_half_edge_triangle_mesh);
+        m_renderer.initObject(m_half_edge_triangle_mesh);
+        updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
+    }
+}
+
+CgTriangleMesh* CgOpenGLRenderingGui::buildMlsPatchMesh(const CgMlsSurface& surface, int gridRes) const {
+    if (gridRes < 2)
+        gridRes = 2;
+
+    glm::vec2 lo, hi;
+    surface.paramBounds(lo, hi);
+
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
+
+    // sample the polynomial on a regular grid over the 2D parameter AABB
+    const int stride = gridRes + 1;
+    for (int j = 0; j <= gridRes; ++j) {
+        for (int i = 0; i <= gridRes; ++i) {
+            const float u = lo.x + (hi.x - lo.x) * static_cast<float>(i) / static_cast<float>(gridRes);
+            const float v = lo.y + (hi.y - lo.y) * static_cast<float>(j) / static_cast<float>(gridRes);
+            vertices.push_back(surface.positionAt(u, v));
+            normals.push_back(surface.normal);
+        }
+    }
+
+    // two triangles per grid cell
+    for (int j = 0; j < gridRes; ++j) {
+        for (int i = 0; i < gridRes; ++i) {
+            const unsigned int a = j * stride + i;
+            const unsigned int b = a + 1;
+            const unsigned int c = a + stride;
+            const unsigned int d = c + 1;
+            indices.push_back(a); indices.push_back(b); indices.push_back(c);
+            indices.push_back(b); indices.push_back(d); indices.push_back(c);
+        }
+    }
+
+    return new CgTriangleMesh(vertices, normals, indices);
 }
 
 void CgOpenGLRenderingGui::moveSelectedObjectInLocalCoordinates(glm::vec3 dir) {
@@ -615,6 +715,49 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             }
         } else {
             ImGui::Text("Keine Point Cloud geladen.");
+        }
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Aufgabe 4")) {
+        const bool havePointCloud = m_point_cloud != nullptr;
+        const bool haveMesh = m_half_edge_triangle_mesh != nullptr;
+
+        if (havePointCloud || haveMesh) {
+            ImGui::Text("Moving Least Squares Glaettung");
+            ImGui::Separator();
+
+            ImGui::SliderInt("Polynomgrad", &m_mls_degree, 1, 5);
+            ImGui::SliderInt("Sampling-Aufloesung", &m_mls_grid_res, 2, 64);
+
+            ImGui::Checkbox("MLS beim Picken (Ctrl+Klick)", &m_mls_pick_active);
+            ImGui::TextWrapped("Bei aktivem Picken: der getroffene Punkt wird geglaettet "
+                               "und das gefittete Polynom als Flaeche gezeichnet.");
+
+            ImGui::Separator();
+            if (ImGui::Button("Ueber alle Punkte glaetten")) {
+                // the per-point patch only makes sense for a single picked point
+                if (m_mls_patch_mesh != nullptr) {
+                    m_renderer.removeObject(m_mls_patch_mesh);
+                    delete m_mls_patch_mesh;
+                    m_mls_patch_mesh = nullptr;
+                }
+                if (havePointCloud) {
+                    dynamic_cast<CgPointCloud*>(m_point_cloud)->smoothAllMLS(m_mls_degree);
+                    m_renderer.removeObject(m_point_cloud);
+                    m_renderer.initObject(m_point_cloud);
+                    if (m_show_render_normals)
+                        updateRenderNormals(m_point_cloud);
+                }
+                if (haveMesh) {
+                    dynamic_cast<CgHalfEdgeTriangleMesh*>(m_half_edge_triangle_mesh)->smoothAllMLS(m_mls_degree);
+                    m_renderer.removeObject(m_half_edge_triangle_mesh);
+                    m_renderer.initObject(m_half_edge_triangle_mesh);
+                    if (m_show_render_normals)
+                        updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
+                }
+            }
+        } else {
+            ImGui::Text("Keine Point Cloud oder Mesh geladen.");
         }
         ImGui::EndTabItem();
     }

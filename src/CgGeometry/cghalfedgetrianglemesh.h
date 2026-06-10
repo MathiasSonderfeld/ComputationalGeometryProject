@@ -5,6 +5,7 @@
 
 #include "cgbasehalfedgetrianglemesh.h"
 #include "cghalfedgeprimitives.h"
+#include "../CgMath/cgmlsfit.h"
 
 #include <vector>
 #include <glm/glm.hpp>
@@ -42,6 +43,23 @@ public:
     void consistencyCheck() const;
     void subdivide();
 
+    // index of the vertex whose position is closest to the picking line, or -1
+    int getClosestVertex(const glm::vec3& origin, const glm::vec3& dir, double maxDistance) const;
+
+    // vertices reachable from `index` over at most two edges (the 2-ring)
+    std::vector<int> twoRingNeighbours(int index) const;
+
+    // Moving Least Squares fit at vertex `index` over its 2-ring neighbourhood
+    // (the vertex itself is included as a sample)
+    CgMlsSurface mlsSurfaceAt(int index, int degree) const;
+
+    // move a single vertex onto a position and refresh the vertex normals
+    void setVertexPosition(int index, const glm::vec3& position);
+
+    // MLS-smooth every vertex at once (double-buffered: old positions feed all
+    // fits, new positions committed together, then normals recomputed)
+    void smoothAllMLS(int degree);
+
     static glm::vec3 calculateNewVerticePosition(CgHeVert *vertex);
 
     static float calculateBeta(int size);
@@ -51,6 +69,9 @@ private:
     CgHeEdge* createEdge(const std::pair<int, int>& edge_vertices, std::unordered_map<std::pair<int, int>, CgHeEdge*, PairHash>& halfEdges, std::unordered_map<int, CgHeVert*>& halfEdgeVertices);
     void calculateNormals() const;
     static glm::vec3 calculateVertexNormal(const CgBaseHeVert* vertex);
+
+    // vertex adjacency derived from the triangle faces (boundary-proof)
+    std::vector<std::vector<int>> buildVertexAdjacency() const;
 
     std::vector<CgBaseHeFace*> m_faces;
     std::vector<CgBaseHeVert*> m_vertices;

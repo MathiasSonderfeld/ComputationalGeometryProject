@@ -1,6 +1,7 @@
 #include "cgpointcloud.h"
 #include "cgtrianglemesh.h"
 #include "../CgMath/cgeigendecomposition3x3.h"
+#include "cgkdtree.h"
 #include <queue>
 #include <tuple>
 #include <functional>
@@ -13,11 +14,13 @@ extern int getUniqueId();
 
 CgPointCloud::CgPointCloud() : m_type(PointCloud),
                                m_id(getUniqueId()),
+                               m_kd_tree(nullptr),
                                m_color(glm::vec3(0.0, 1.0, 0.0)) {
 }
 
 CgPointCloud::CgPointCloud(std::vector<glm::vec3> &vertices) : m_type(PointCloud),
                                                                m_id(getUniqueId()),
+                                                               m_kd_tree(nullptr),
                                                                m_color(glm::vec3(0.0, 1.0, 0.0)) {
     m_vertices.clear();
     m_vertex_normals.clear();
@@ -27,10 +30,12 @@ CgPointCloud::CgPointCloud(std::vector<glm::vec3> &vertices) : m_type(PointCloud
         m_vertices.emplace_back(vert);
 
     m_k = std::max(5, static_cast<int>(std::sqrt(static_cast<float>(m_vertices.size()))));
+    m_kd_tree = new CgKdTree(*this);
     calculateNormals();
 }
 
 CgPointCloud::~CgPointCloud() {
+    delete m_kd_tree;
     m_vertices.clear();
     m_vertex_normals.clear();
     m_vertex_colors.clear();
@@ -88,7 +93,7 @@ const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm
         return glm::vec3(0.0f);
 
     // highlight k nearest neighbors of the selected point in red
-    for (int idx: kNearestNeighboursSimple(m_vertices[closestIdx], m_k))
+    for (int idx: m_kd_tree->knn(closestIdx, m_k))
         m_vertex_colors[idx] = glm::vec3(1.0f, 0.0f, 0.0f);
 
     return m_vertices[closestIdx];
@@ -99,7 +104,7 @@ void CgPointCloud::calculateNormals() {
     m_vertex_normals.resize(n);
 
     for (int i = 0; i < n; ++i) {
-        std::vector<int> neighbors = kNearestNeighboursSimple(m_vertices[i], m_k);
+        std::vector<int> neighbors = m_kd_tree->knn(i, m_k);
 
         // centroid of the local neighbourhood
         glm::vec3 centroid(0.0f);
@@ -151,7 +156,7 @@ void CgPointCloud::orientNormals() {
     // edge weight = 1 - |dot(ni, nj)|: low cost when normals are nearly parallel
     std::vector<std::vector<std::pair<int, float> > > adjacency_list(n);
     for (int i = 0; i < n; ++i) {
-        std::vector<int> neighbors = kNearestNeighboursSimple(m_vertices[i], m_k);
+        std::vector<int> neighbors = m_kd_tree->knn(i, m_k);
         for (int j: neighbors) {
             if (j == i) continue;
             float weight = 1.0f - std::abs(glm::dot(m_vertex_normals[i], m_vertex_normals[j]));

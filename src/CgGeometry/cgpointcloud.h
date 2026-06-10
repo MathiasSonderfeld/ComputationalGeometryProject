@@ -6,6 +6,7 @@
 #include "cgbasepointcloud.h"
 
 class CgTriangleMesh;
+class CgKdTree;
 
 class CgPointCloud : public CgBasePointCloud
 {
@@ -69,6 +70,7 @@ protected:
     mutable std::vector<glm::vec3> m_vertex_colors;
 
     int m_k{};
+    CgKdTree* m_kd_tree;
 
     // store id and type as provided by CgBaseRenderableObject
     const ObjectType m_type;

@@ -7,12 +7,10 @@
 class CgKdNode
 {
 public:
-    explicit CgKdNode(int pointIndex);
-    CgKdNode(CgKdAxis axis, float splitValue, std::vector<int> onPlaneIndices = {});
+    CgKdNode(CgKdAxis axis, float splitValue, std::vector<int> indices = {});
     ~CgKdNode();
 
     [[nodiscard]] bool isLeaf() const;
-    [[nodiscard]] int getPointIndex() const;
     [[nodiscard]] CgKdAxis getSplitAxis() const;
     [[nodiscard]] float getSplitValue() const;
     [[nodiscard]] const std::vector<int>& getOnPlaneIndices() const;
@@ -22,7 +20,6 @@ public:
     void setRight(CgKdNode* right);
 
 private:
-    int m_point_index;
     CgKdAxis m_split_axis;
     float m_split_value;
     std::vector<int> m_on_plane_indices;
@@ -30,10 +27,9 @@ private:
     CgKdNode* m_right;
 };
 
-inline bool     CgKdNode::isLeaf()              const { return m_point_index != -1; }
-inline int      CgKdNode::getPointIndex()        const { return m_point_index; }
-inline CgKdAxis CgKdNode::getSplitAxis()         const { return m_split_axis; }
-inline float    CgKdNode::getSplitValue()        const { return m_split_value; }
+inline bool      CgKdNode::isLeaf()             const { return m_left == nullptr && m_right == nullptr; }
+inline CgKdAxis  CgKdNode::getSplitAxis()        const { return m_split_axis; }
+inline float     CgKdNode::getSplitValue()       const { return m_split_value; }
 inline const std::vector<int>& CgKdNode::getOnPlaneIndices() const { return m_on_plane_indices; }
 inline CgKdNode* CgKdNode::getLeft()             const { return m_left; }
 inline CgKdNode* CgKdNode::getRight()            const { return m_right; }

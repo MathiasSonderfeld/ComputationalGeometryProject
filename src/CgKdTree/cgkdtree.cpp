@@ -9,11 +9,11 @@ CgKdTree::CgKdTree(const CgPointCloud &cloud, CgKdSplitStrategy *strategy,
                    CgKdAxisStrategy *axisStrategy) : m_root(nullptr),
                                                      m_points(cloud.getVertices()),
                                                      m_strategy(strategy
-                                                             ? strategy
-                                                             : new CgKdMedianSplit()),
+                                                                    ? strategy
+                                                                    : new CgKdMedianSplit()),
                                                      m_axis_strategy(axisStrategy
-                                                             ? axisStrategy
-                                                             : new CgKdRoundRobinAxis()) {
+                                                                         ? axisStrategy
+                                                                         : new CgKdRoundRobinAxis()) {
     std::vector<int> indices(m_points.size());
     for (int i = 0; i < static_cast<int>(m_points.size()); ++i)
         indices[i] = i;
@@ -150,7 +150,8 @@ std::vector<int> CgKdTree::knn(const int queryIdx, const int k) const {
     return result;
 }
 
-void CgKdTree::collectSplitRects(const CgKdNode *node, const CgAABB& bounds, const int depth, std::vector<CgKdSplitRect> &result) {
+void CgKdTree::collectSplitRects(const CgKdNode *node, const CgAABB &bounds, const int depth,
+                                 std::vector<CgKdSplitRect> &result) {
     if (!node || node->isLeaf()) return;
 
     const int axisIdx = static_cast<int>(node->getSplitAxis());
@@ -193,4 +194,70 @@ std::vector<CgKdSplitRect> CgKdTree::getSplitPlaneRects(const CgAABB &rootBounds
     std::vector<CgKdSplitRect> result;
     collectSplitRects(m_root, rootBounds, 0, result);
     return result;
+}
+
+static float perpendicularDistanceSquaredToLine(const glm::vec3 &p, const glm::vec3 &origin, const glm::vec3 &dir) {
+    const glm::vec3 toPoint = p - origin;                         // anchor -> point (hypotenuse)
+    const float projectionLength = glm::dot(toPoint, dir);        // its shadow along the line
+    // Pythagoras: |toPoint|^2 - projection^2 = perpendicular^2
+    return glm::dot(toPoint, toPoint) - projectionLength * projectionLength;
+}
+
+static float closestPossibleDistanceToLine(const CgAABB &bounds, const glm::vec3 &origin, const glm::vec3 &dir) {
+    const glm::vec3 center = 0.5f * (bounds.min + bounds.max);
+    const float radius = 0.5f * glm::length(bounds.max - bounds.min);
+    const float centerDist = std::sqrt(std::max(0.0f, perpendicularDistanceSquaredToLine(center, origin, dir)));
+    return std::max(0.0f, centerDist - radius);
+}
+
+void CgKdTree::searchClosestToLine(const CgKdNode *node, const CgAABB &bounds, const glm::vec3 &origin,
+                                   const glm::vec3 &dir, float &bestDistSq, int &bestIdx) const {
+    if (!node) return;
+
+    // evaluate this node's own points against the line
+    for (const int idx: node->getOnPlaneIndices()) {
+        const float distSq = perpendicularDistanceSquaredToLine(m_points[idx], origin, dir);
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            bestIdx = idx;
+        }
+    }
+
+    if (node->isLeaf()) return;
+
+    const int axisIdx = static_cast<int>(node->getSplitAxis());
+    const float sv = node->getSplitValue();
+    CgAABB leftBounds = bounds;
+    leftBounds.max[axisIdx] = sv;
+    CgAABB rightBounds = bounds;
+    rightBounds.min[axisIdx] = sv;
+
+    const float leftBound = closestPossibleDistanceToLine(leftBounds, origin, dir);
+    const float rightBound = closestPossibleDistanceToLine(rightBounds, origin, dir);
+
+    // visit the nearer child first (tightens bestDist early), then the farther
+    // one only if it could still hold something closer than the current best
+    if (leftBound <= rightBound) {
+        if (leftBound * leftBound < bestDistSq)
+            searchClosestToLine(node->getLeft(), leftBounds, origin, dir, bestDistSq, bestIdx);
+        if (rightBound * rightBound < bestDistSq)
+            searchClosestToLine(node->getRight(), rightBounds, origin, dir, bestDistSq, bestIdx);
+    } else {
+        if (rightBound * rightBound < bestDistSq)
+            searchClosestToLine(node->getRight(), rightBounds, origin, dir, bestDistSq, bestIdx);
+        if (leftBound * leftBound < bestDistSq)
+            searchClosestToLine(node->getLeft(), leftBounds, origin, dir, bestDistSq, bestIdx);
+    }
+}
+
+int CgKdTree::closestToLine(const glm::vec3 &origin, const glm::vec3 &dir,
+                            const CgAABB &rootBounds, const double maxDistance) const {
+    if (!m_root) return -1;
+
+    const glm::vec3 unitDir = glm::normalize(dir);
+    float bestDistSq = static_cast<float>(maxDistance * maxDistance);
+    int bestIdx = -1;
+
+    searchClosestToLine(m_root, rootBounds, origin, unitDir, bestDistSq, bestIdx);
+    return bestIdx;
 }

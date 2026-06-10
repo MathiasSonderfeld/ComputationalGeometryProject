@@ -76,26 +76,14 @@ const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm
     if (m_vertices.empty())
         return glm::vec3(0.0f);
 
-    float minDistSq = std::numeric_limits<float>::max();
-    int closestIdx = 0;
-
-    for (int i = 0; i < static_cast<int>(m_vertices.size()); ++i) {
-        glm::vec3 diff = m_vertices[i] - origin;
-        float t = glm::dot(diff, dir);
-        glm::vec3 proj = origin + t * dir;
-        glm::vec3 perp = m_vertices[i] - proj;
-        float distSq = glm::dot(perp, perp);
-        if (distSq < minDistSq) {
-            minDistSq = distSq;
-            closestIdx = i;
-        }
-    }
+    // branch-and-bound over the KD-tree instead of scanning every point.
+    // maxDistance doubles as the picking radius: -1 means nothing was close enough
+    const int closestIdx = m_kd_tree->closestToLine(origin, dir, m_aabb, maxDistance);
 
     // reset all colors to the object's uniform default
     m_vertex_colors.assign(m_vertices.size(), m_color);
 
-    // reject if the closest point is still farther from the ray than allowed
-    if (std::sqrt(minDistSq) > static_cast<float>(maxDistance))
+    if (closestIdx < 0)
         return glm::vec3(0.0f);
 
     // highlight k nearest neighbors of the selected point in red

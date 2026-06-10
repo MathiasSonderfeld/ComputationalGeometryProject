@@ -5,18 +5,18 @@
 CgKdTree::CgKdTree(const CgPointCloud& cloud, CgKdSplitStrategy* strategy):
     m_root(nullptr),
     m_points(cloud.getVertices()),
-    m_default_strategy(),
-    m_strategy(strategy ? strategy : &m_default_strategy)
+    m_strategy(strategy ? strategy : new CgKdMedianSplit())
 {
     std::vector<int> indices(m_points.size());
     for (int i = 0; i < static_cast<int>(m_points.size()); ++i)
         indices[i] = i;
-    m_root = build(std::move(indices), 0);
+    m_root = build(indices, 0);
 }
 
 CgKdTree::~CgKdTree()
 {
     delete m_root;
+    delete m_strategy;
 }
 
 CgKdAxis CgKdTree::chooseSplitAxis(const std::vector<int>& indices) const

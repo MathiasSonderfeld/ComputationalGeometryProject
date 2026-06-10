@@ -20,7 +20,6 @@ private:
 
     CgKdNode* m_root;
     const std::vector<glm::vec3>& m_points;
-    CgKdMedianSplit m_default_strategy;
     CgKdSplitStrategy* m_strategy;
 };
 

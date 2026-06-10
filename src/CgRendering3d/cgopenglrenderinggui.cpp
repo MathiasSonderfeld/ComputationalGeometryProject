@@ -28,7 +28,7 @@ using namespace Eigen;
 
 CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     gui_current_path = "";
-    show_demo_window = true;
+    show_demo_window = false;
     m_polygon_mode = 2;
     m_lighting_mode = true;
     m_normal_scale = 0.2f;
@@ -327,30 +327,31 @@ void CgOpenGLRenderingGui::showGUI(int window_size_x, int window_size_y) {
 
     showOpenGLWindow();
 
-    if (show_demo_window) {
-        ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, 10));
-        ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 6.0));
-    }
+    // render options: top-right, always positioned
+    ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, 10));
+    ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 6.0));
 
     createRenderOptionsGui();
 
-    // gui composition is a bit tricky to have nice sizes of the elements
+    // exercises tab bar: middle-right.
+    // when the demo window is hidden it expands to fill the remaining space below
     ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, window_size_y / 6.0 + 20));
     if (show_demo_window)
         ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 3.0));
     else
         ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y - 10 - (window_size_y / 6.0 + 20)));
 
-
     // create gui for all exercises
     createAufgabenTabBar();
 
     // Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()!
     // You can browse its code to learn more about Dear ImGui!).
-    ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, window_size_y / 3.0 + 30 + window_size_y / 6.0));
-    ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 3.0 * 2 - 30));
-    if (show_demo_window)
+    // hidden by default, can be re-enabled via the checkbox in Render Options
+    if (show_demo_window) {
+        ImGui::SetNextWindowPos(ImVec2(window_size_x / 2.0 + 10, window_size_y / 3.0 + 30 + window_size_y / 6.0));
+        ImGui::SetNextWindowSize(ImVec2(window_size_x / 2.0 - 20, window_size_y / 3.0 * 2 - 30));
         ImGui::ShowDemoWindow(&show_demo_window);
+    }
 }
 
 void CgOpenGLRenderingGui::createRenderOptionsGui() {
@@ -366,6 +367,8 @@ void CgOpenGLRenderingGui::createRenderOptionsGui() {
 
     ImGui::Checkbox("enable lighting", &m_lighting_mode);
     m_renderer.setLightingMode(m_lighting_mode);
+
+    ImGui::Checkbox("ImGui Demo anzeigen", &show_demo_window);
 
     if (ImGui::Checkbox("render normals", &m_show_render_normals)) {
         if (m_show_render_normals) {
@@ -565,20 +568,33 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             }
 
             ImGui::Separator();
-            if (ImGui::Button("Split-Ebenen rendern")) {
-                if (m_split_plane_lines != nullptr) {
-                    m_renderer.removeObject(m_split_plane_lines);
-                    delete m_split_plane_lines;
-                }
-                m_split_plane_lines = pc->generateSplitPlaneLines();
-                m_renderer.initObject(m_split_plane_lines);
-            }
-
-            ImGui::Separator();
             ImGui::Text("Splat-Ansicht:");
             ImGui::RadioButton("Pro Punkt", &m_splat_display_mode, 0);
             ImGui::SameLine();
             ImGui::RadioButton("Pro Cluster", &m_splat_display_mode, 1);
+        } else {
+            ImGui::Text("Keine Point Cloud geladen.");
+        }
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Aufgabe 3")) {
+        if (m_point_cloud != nullptr) {
+            CgPointCloud* pc = dynamic_cast<CgPointCloud*>(m_point_cloud);
+
+            ImGui::Text("KD-Tree Visualisierung");
+            ImGui::Separator();
+
+            bool show_split_planes = (m_split_plane_lines != nullptr);
+            if (ImGui::Checkbox("Trennebenen anzeigen", &show_split_planes)) {
+                if (show_split_planes) {
+                    m_split_plane_lines = pc->generateSplitPlaneLines();
+                    m_renderer.initObject(m_split_plane_lines);
+                } else if (m_split_plane_lines != nullptr) {
+                    m_renderer.removeObject(m_split_plane_lines);
+                    delete m_split_plane_lines;
+                    m_split_plane_lines = nullptr;
+                }
+            }
         } else {
             ImGui::Text("Keine Point Cloud geladen.");
         }

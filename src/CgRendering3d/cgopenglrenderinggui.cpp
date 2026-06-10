@@ -37,6 +37,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_show_render_normals = false;
 
     m_select_ray = nullptr;
+    m_split_plane_lines = nullptr;
     m_render_normals = nullptr;
 
     m_triangle_fan = nullptr;
@@ -49,6 +50,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_pick_max_distance = 0.1f;
     m_cluster_mesh = nullptr;
     m_region_growing_angle = 20.0f;
+    m_cluster_scale = 1.0f;
     m_min_cluster_size = 10;
     m_splat_display_mode = 0;
 
@@ -129,6 +131,12 @@ void CgOpenGLRenderingGui::reset() {
         delete m_select_ray;
         m_select_ray = nullptr;
     }
+
+    if (m_split_plane_lines != nullptr) {
+        m_renderer.removeObject(m_split_plane_lines);
+        delete m_split_plane_lines;
+        m_split_plane_lines = nullptr;
+    }
 }
 
 void CgOpenGLRenderingGui::renderObjects() {
@@ -162,6 +170,9 @@ void CgOpenGLRenderingGui::renderObjects() {
     // render picking ray
     if (m_select_ray != nullptr)
         m_renderer.renderObject(m_select_ray);
+
+    if (m_split_plane_lines != nullptr)
+        m_renderer.renderObject(m_split_plane_lines);
 
     // render objects for control polygon example
     renderControlPolygonExample();
@@ -539,10 +550,28 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
                     delete m_cluster_mesh;
                     m_cluster_mesh = nullptr;
                 }
-                auto clusters = pc->regionGrowing(m_region_growing_angle, m_min_cluster_size);
-                std::cout << "Region Growing: " << clusters.size() << " Cluster" << std::endl;
-                m_cluster_mesh = pc->generateClusterMesh(clusters);
+                m_clusters = pc->regionGrowing(m_region_growing_angle, m_min_cluster_size);
+                std::cout << "Region Growing: " << m_clusters.size() << " Cluster" << std::endl;
+                m_cluster_mesh = pc->generateClusterMesh(m_clusters, 32, m_cluster_scale);
                 m_renderer.initObject(m_cluster_mesh);
+            }
+            if (ImGui::SliderFloat("Cluster Scale", &m_cluster_scale, 0.1f, 5.0f)) {
+                if (m_cluster_mesh != nullptr && !m_clusters.empty()) {
+                    m_renderer.removeObject(m_cluster_mesh);
+                    delete m_cluster_mesh;
+                    m_cluster_mesh = pc->generateClusterMesh(m_clusters, 32, m_cluster_scale);
+                    m_renderer.initObject(m_cluster_mesh);
+                }
+            }
+
+            ImGui::Separator();
+            if (ImGui::Button("Split-Ebenen rendern")) {
+                if (m_split_plane_lines != nullptr) {
+                    m_renderer.removeObject(m_split_plane_lines);
+                    delete m_split_plane_lines;
+                }
+                m_split_plane_lines = pc->generateSplitPlaneLines();
+                m_renderer.initObject(m_split_plane_lines);
             }
 
             ImGui::Separator();

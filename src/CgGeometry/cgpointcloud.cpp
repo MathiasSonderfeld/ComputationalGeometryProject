@@ -1,5 +1,6 @@
 #include "cgpointcloud.h"
 #include "cgtrianglemesh.h"
+#include "cgpointlist.h"
 #include "../CgMath/cgeigendecomposition3x3.h"
 #include "cgkdtree.h"
 #include <queue>
@@ -26,8 +27,13 @@ CgPointCloud::CgPointCloud(std::vector<glm::vec3> &vertices) : m_type(PointCloud
     m_vertex_normals.clear();
     m_vertex_colors.clear();
 
-    for (auto &vert: vertices)
-        m_vertices.emplace_back(vert);
+
+    m_aabb.min = m_aabb.max = vertices[0];
+    for (auto& vertex: vertices) {
+        m_vertices.emplace_back(vertex);
+        m_aabb.min = glm::min(m_aabb.min, vertex);
+        m_aabb.max = glm::max(m_aabb.max, vertex);
+    }
 
     m_k = std::max(5, static_cast<int>(std::sqrt(static_cast<float>(m_vertices.size()))));
     m_kd_tree = new CgKdTree(*this);
@@ -274,7 +280,7 @@ CgTriangleMesh *CgPointCloud::generateSplatMesh(const float radius, int segments
     return new CgTriangleMesh(vertices, norms, idx);
 }
 
-static glm::vec3 hsvToRgb(float hue, float saturation, float value) {
+static glm::vec3 hsvToRgb(float hue, const float saturation, float value) {
     if (saturation <= 0.0f) return {value, value, value};
     hue = std::fmod(hue, 1.0f) * 6.0f;
     int sectorIndex = static_cast<int>(hue);
@@ -365,7 +371,7 @@ std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg, int
     return clusters;
 }
 
-CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<int> > &clusters, int segments) const {
+CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<int> > &clusters, int segments, float scale) const {
     std::vector<glm::vec3> vertices, normals, colors;
     std::vector<unsigned int> indices;
     const int clusterCount = static_cast<int>(clusters.size());
@@ -422,7 +428,7 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
             float proj = std::abs(glm::dot(m_vertices[pointIndex] - centroid, ellipseAxis1));
             if (proj > semiAxisMajor) semiAxisMajor = proj;
         }
-        semiAxisMajor = std::max(semiAxisMajor, epsilon);
+        semiAxisMajor = std::max(semiAxisMajor, epsilon) * scale;
         // scale minor axis by eigenvalue ratio to preserve the local shape
         float semiAxisMinor = semiAxisMajor * std::sqrt(std::max(minorEigenvalue, epsilon) /
                                                         std::max(majorEigenvalue, epsilon));
@@ -450,4 +456,19 @@ CgTriangleMesh* CgPointCloud::generateClusterMesh(const std::vector<std::vector<
         }
     }
     return new CgTriangleMesh(vertices, normals, indices, colors);
+}
+
+CgPointList* CgPointCloud::generateSplitPlaneLines() const {
+    const auto rects = m_kd_tree->getSplitPlaneRects(m_aabb);
+    std::vector<glm::vec3> vertices;
+    vertices.reserve(rects.size() * 8);
+    for (const auto&[corners, depth] : rects) {
+        vertices.push_back(corners[0]); vertices.push_back(corners[1]);
+        vertices.push_back(corners[1]); vertices.push_back(corners[2]);
+        vertices.push_back(corners[2]); vertices.push_back(corners[3]);
+        vertices.push_back(corners[3]); vertices.push_back(corners[0]);
+    }
+    CgPointList* lines = new CgPointList(vertices);
+    lines->setLineStyle(CG_LINES);
+    return lines;
 }

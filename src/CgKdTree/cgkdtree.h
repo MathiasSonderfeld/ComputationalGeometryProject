@@ -7,9 +7,15 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "cgkdmediansplit.h"
+#include "cgaabb.h"
 
 class CgPointCloud;
 class CgKdNode;
+
+struct CgKdSplitRect {
+    glm::vec3 corners[4];
+    int depth;
+};
 
 class CgKdTree
 {
@@ -18,12 +24,15 @@ public:
     ~CgKdTree();
 
     [[nodiscard]] std::vector<int> knn(int queryIdx, int k) const;
+    [[nodiscard]] std::vector<CgKdSplitRect> getSplitPlaneRects(const CgAABB& rootBounds) const;
 
 private:
     using KnnPQ = std::priority_queue<std::pair<float, int>>;
 
     CgKdNode* build(const std::vector<int>& indices, int depth);
     [[nodiscard]] CgKdAxis chooseSplitAxis(const std::vector<int>& indices) const;
+
+    static void collectSplitRects(const CgKdNode* node, const CgAABB &bounds, int depth, std::vector<CgKdSplitRect>& result);
 
     void addToPQ(int idx, int queryIdx, int k, KnnPQ& pq) const;
     void searchNode(const CgKdNode* node, int queryIdx, int k, KnnPQ& pq) const;

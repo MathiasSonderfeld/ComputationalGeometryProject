@@ -4,8 +4,10 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "cgbasepointcloud.h"
+#include "cgaabb.h"
 
 class CgTriangleMesh;
+class CgPointList;
 class CgKdTree;
 
 class CgPointCloud : public CgBasePointCloud
@@ -45,7 +47,7 @@ public:
     void orientNormals();
 
     int getK() const { return m_k; }
-    void setK(int k) { m_k = k; }
+    void setK(const int k) { m_k = k; }
 
     // generates a triangle mesh with one disc splat per vertex, oriented along the vertex normal
     CgTriangleMesh* generateSplatMesh(float radius, int segments = 8) const;
@@ -53,7 +55,11 @@ public:
     std::vector<std::vector<int>> regionGrowing(float maxAngleDeg, int minClusterSize = 1) const;
 
     CgTriangleMesh* generateClusterMesh(const std::vector<std::vector<int>>& clusters,
-                                        int segments = 32) const;
+                                        int segments = 32, float scale = 1.0f) const;
+
+    CgPointList* generateSplitPlaneLines() const;
+
+    const CgAABB& getAABB() const { return m_aabb; }
 
 protected:
     // store point data given by constructor
@@ -69,6 +75,7 @@ protected:
     // by a different color, to be constructed by students
     mutable std::vector<glm::vec3> m_vertex_colors;
 
+    CgAABB m_aabb{};
     int m_k{};
     CgKdTree* m_kd_tree;
 

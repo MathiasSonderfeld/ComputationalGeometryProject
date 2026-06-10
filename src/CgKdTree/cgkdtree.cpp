@@ -7,8 +7,8 @@
 CgKdTree::CgKdTree(const CgPointCloud &cloud, CgKdSplitStrategy *strategy) : m_root(nullptr),
                                                                              m_points(cloud.getVertices()),
                                                                              m_strategy(strategy
-                                                                                 ? strategy
-                                                                                 : new CgKdMedianSplit()) {
+                                                                                     ? strategy
+                                                                                     : new CgKdMedianSplit()) {
     std::vector<int> indices(m_points.size());
     for (int i = 0; i < static_cast<int>(m_points.size()); ++i)
         indices[i] = i;
@@ -90,7 +90,7 @@ void CgKdTree::searchSubtree(const CgKdNode *node, const int queryIdx, const int
     const int axisIdx = static_cast<int>(node->getSplitAxis());
     const float queryCoord = m_points[queryIdx][axisIdx];
     const CgKdNode *near = (queryCoord < node->getSplitValue()) ? node->getLeft() : node->getRight();
-    const CgKdNode *far  = (queryCoord < node->getSplitValue()) ? node->getRight() : node->getLeft();
+    const CgKdNode *far = (queryCoord < node->getSplitValue()) ? node->getRight() : node->getLeft();
 
     searchSubtree(near, queryIdx, k, pq);
 
@@ -134,11 +134,11 @@ std::vector<int> CgKdTree::knn(const int queryIdx, const int k) const {
     KnnPQ pq;
 
     searchNode(current, queryIdx, k, pq);
-    searchSubtree(current->getLeft(),  queryIdx, k, pq);
+    searchSubtree(current->getLeft(), queryIdx, k, pq);
     searchSubtree(current->getRight(), queryIdx, k, pq);
 
     for (int i = static_cast<int>(path.size()) - 2; i >= 0; --i) {
-        const CgKdNode *ancestor   = path[i];
+        const CgKdNode *ancestor = path[i];
         const CgKdNode *nextInPath = path[i + 1];
         const CgKdNode *other = (ancestor->getLeft() == nextInPath)
                                     ? ancestor->getRight()
@@ -158,5 +158,50 @@ std::vector<int> CgKdTree::knn(const int queryIdx, const int k) const {
         pq.pop();
     }
     std::reverse(result.begin(), result.end());
+    return result;
+}
+
+void CgKdTree::collectSplitRects(const CgKdNode *node, const CgAABB& bounds, const int depth, std::vector<CgKdSplitRect> &result) {
+    if (!node || node->isLeaf()) return;
+
+    const int axisIdx = static_cast<int>(node->getSplitAxis());
+    const float sv = node->getSplitValue();
+
+    CgKdSplitRect rect{};
+    rect.depth = depth;
+    switch (node->getSplitAxis()) {
+        case CgKdAxis::X:
+            rect.corners[0] = glm::vec3(sv, bounds.min.y, bounds.min.z);
+            rect.corners[1] = glm::vec3(sv, bounds.max.y, bounds.min.z);
+            rect.corners[2] = glm::vec3(sv, bounds.max.y, bounds.max.z);
+            rect.corners[3] = glm::vec3(sv, bounds.min.y, bounds.max.z);
+            break;
+        case CgKdAxis::Y:
+            rect.corners[0] = glm::vec3(bounds.min.x, sv, bounds.min.z);
+            rect.corners[1] = glm::vec3(bounds.max.x, sv, bounds.min.z);
+            rect.corners[2] = glm::vec3(bounds.max.x, sv, bounds.max.z);
+            rect.corners[3] = glm::vec3(bounds.min.x, sv, bounds.max.z);
+            break;
+        case CgKdAxis::Z:
+            rect.corners[0] = glm::vec3(bounds.min.x, bounds.min.y, sv);
+            rect.corners[1] = glm::vec3(bounds.max.x, bounds.min.y, sv);
+            rect.corners[2] = glm::vec3(bounds.max.x, bounds.max.y, sv);
+            rect.corners[3] = glm::vec3(bounds.min.x, bounds.max.y, sv);
+            break;
+    }
+    result.push_back(rect);
+
+    CgAABB leftBounds = bounds;
+    leftBounds.max[axisIdx] = sv;
+    CgAABB rightBounds = bounds;
+    rightBounds.min[axisIdx] = sv;
+
+    collectSplitRects(node->getLeft(), leftBounds, depth + 1, result);
+    collectSplitRects(node->getRight(), rightBounds, depth + 1, result);
+}
+
+std::vector<CgKdSplitRect> CgKdTree::getSplitPlaneRects(const CgAABB &rootBounds) const {
+    std::vector<CgKdSplitRect> result;
+    collectSplitRects(m_root, rootBounds, 0, result);
     return result;
 }

@@ -76,7 +76,9 @@ private:
  float m_splat_radius;
  float m_pick_max_distance;
  CgTriangleMesh* m_cluster_mesh;
+ std::vector<std::vector<int>> m_clusters;
  float m_region_growing_angle;
+ float m_cluster_scale;
  int m_min_cluster_size;
  int m_splat_display_mode; // 0 = pro Punkt, 1 = pro Cluster
 
@@ -120,6 +122,7 @@ private:
  *************************************************************/
 
  CgPointList* m_select_ray; //style CG_LINES
+ CgPointList* m_split_plane_lines; //style CG_LINES
 
 
  /* ***********************************************************

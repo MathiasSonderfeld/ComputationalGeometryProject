@@ -58,8 +58,9 @@ public:
     void setVertexPosition(int index, const glm::vec3& position) const;
 
     // MLS-smooth every vertex at once (double-buffered: old positions feed all
-    // fits, new positions committed together, then normals recomputed)
-    void smoothAllMLS(int degree) const;
+    // fits, new positions committed together, then normals recomputed).
+    // useNewton: orthogonal foot point via Newton instead of vertical projection
+    void smoothAllMLS(int degree, bool useNewton) const;
 
     static glm::vec3 calculateNewVerticePosition(CgHeVert *vertex);
 

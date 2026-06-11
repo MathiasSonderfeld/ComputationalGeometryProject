@@ -88,6 +88,7 @@ private:
  int m_mls_degree;
  int m_mls_grid_res;               // sampling resolution of the patch mesh
  bool m_mls_pick_active;           // when true, ctrl-click runs MLS on the hit vertex
+ bool m_mls_newton;                // orthogonal Newton foot point vs vertical projection
  // builds the fitted polynomial as a sampled triangle mesh over its 2D param bounds
  CgTriangleMesh* buildMlsPatchMesh(const CgMlsSurface& surface, int gridRes) const;
  void runMlsPick(const glm::vec3& ray_start, const glm::vec3& ray_direction);

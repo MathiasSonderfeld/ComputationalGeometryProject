@@ -67,8 +67,9 @@ public:
     void setVertexPosition(int index, const glm::vec3& position);
 
     // smooth every vertex with MLS at once. computed double-buffered (old
-    // positions feed all fits, new positions are committed together)
-    void smoothAllMLS(int degree);
+    // positions feed all fits, new positions are committed together).
+    // useNewton: orthogonal foot point via Newton instead of vertical projection
+    void smoothAllMLS(int degree, bool useNewton);
 
     CgTriangleMesh* generateClusterMesh(const std::vector<std::vector<int>>& clusters,
                                         int segments = 32, float scale = 1.0f) const;

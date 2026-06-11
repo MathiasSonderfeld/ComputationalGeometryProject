@@ -59,6 +59,7 @@ CgOpenGLRenderingGui::CgOpenGLRenderingGui() : show_pick_ray(false) {
     m_mls_degree = 2;
     m_mls_grid_res = 16;
     m_mls_pick_active = false;
+    m_mls_newton = false;
 
     // show an example for a control polygon
     // provided for BIN/MDI-CG3 lecture
@@ -332,8 +333,10 @@ void CgOpenGLRenderingGui::runMlsPick(const glm::vec3& ray_start, const glm::vec
         m_mls_patch_mesh = buildMlsPatchMesh(surface, m_mls_grid_res);
         m_renderer.initObject(m_mls_patch_mesh);
 
-        // move the picked point onto its smoothed position (P at its own (0,0))
-        pc->setVertexPosition(idx, surface.positionAt(0.0f, 0.0f));
+        // move the picked point onto its smoothed position: vertical projection
+        // at its own (0,0), or the true Newton foot point when enabled
+        pc->setVertexPosition(idx, m_mls_newton ? surface.projectOrthogonal()
+                                                : surface.positionAt(0.0f, 0.0f));
         m_renderer.removeObject(m_point_cloud);
         m_renderer.initObject(m_point_cloud);
         return;
@@ -352,7 +355,8 @@ void CgOpenGLRenderingGui::runMlsPick(const glm::vec3& ray_start, const glm::vec
         m_mls_patch_mesh = buildMlsPatchMesh(surface, m_mls_grid_res);
         m_renderer.initObject(m_mls_patch_mesh);
 
-        mesh->setVertexPosition(idx, surface.positionAt(0.0f, 0.0f));
+        mesh->setVertexPosition(idx, m_mls_newton ? surface.projectOrthogonal()
+                                                  : surface.positionAt(0.0f, 0.0f));
         m_renderer.removeObject(m_half_edge_triangle_mesh);
         m_renderer.initObject(m_half_edge_triangle_mesh);
         updateRenderNormalsHalfEdges(m_half_edge_triangle_mesh);
@@ -733,6 +737,11 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
             ImGui::TextWrapped("Bei aktivem Picken: der getroffene Punkt wird geglaettet "
                                "und das gefittete Polynom als Flaeche gezeichnet.");
 
+            ImGui::Checkbox("Orthogonale Projektion (Newton)", &m_mls_newton);
+            ImGui::TextWrapped("Aus: vertikale Projektion entlang der Normale (P(0,0)). "
+                               "An: echter Lotfusspunkt per Newton-Iteration, mit "
+                               "Rueckfall auf die vertikale Projektion bei Nichtkonvergenz.");
+
             ImGui::Separator();
             if (ImGui::Button("Ueber alle Punkte glaetten")) {
                 // the per-point patch only makes sense for a single picked point
@@ -742,14 +751,14 @@ void CgOpenGLRenderingGui::createAufgabenTabBar() {
                     m_mls_patch_mesh = nullptr;
                 }
                 if (havePointCloud) {
-                    dynamic_cast<CgPointCloud*>(m_point_cloud)->smoothAllMLS(m_mls_degree);
+                    dynamic_cast<CgPointCloud*>(m_point_cloud)->smoothAllMLS(m_mls_degree, m_mls_newton);
                     m_renderer.removeObject(m_point_cloud);
                     m_renderer.initObject(m_point_cloud);
                     if (m_show_render_normals)
                         updateRenderNormals(m_point_cloud);
                 }
                 if (haveMesh) {
-                    dynamic_cast<CgHalfEdgeTriangleMesh*>(m_half_edge_triangle_mesh)->smoothAllMLS(m_mls_degree);
+                    dynamic_cast<CgHalfEdgeTriangleMesh*>(m_half_edge_triangle_mesh)->smoothAllMLS(m_mls_degree, m_mls_newton);
                     m_renderer.removeObject(m_half_edge_triangle_mesh);
                     m_renderer.initObject(m_half_edge_triangle_mesh);
                     if (m_show_render_normals)

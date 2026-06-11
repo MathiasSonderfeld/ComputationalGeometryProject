@@ -523,7 +523,7 @@ void CgHalfEdgeTriangleMesh::setVertexPosition(const int index, const glm::vec3&
     calculateNormals();
 }
 
-void CgHalfEdgeTriangleMesh::smoothAllMLS(const int degree) const {
+void CgHalfEdgeTriangleMesh::smoothAllMLS(const int degree, const bool useNewton) const {
     const int n = static_cast<int>(m_vertices.size());
     if (n == 0)
         return;
@@ -539,7 +539,9 @@ void CgHalfEdgeTriangleMesh::smoothAllMLS(const int degree) const {
             samples.push_back(nb->position());
 
         const CgMlsSurface surface = fitMlsSurface(center->position(), center->normal(), samples, degree);
-        newPositions[i] = surface.positionAt(0.0f, 0.0f);
+        // vertical projection at (0,0), or the true Newton foot point
+        newPositions[i] = useNewton ? surface.projectOrthogonal()
+                                    : surface.positionAt(0.0f, 0.0f);
     }
 
     for (int i = 0; i < n; ++i)

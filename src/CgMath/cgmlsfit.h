@@ -28,6 +28,13 @@ struct CgMlsSurface {
     // lift a parameter pair back into world space
     [[nodiscard]] glm::vec3 positionAt(float u, float v) const;
 
+    // the true orthogonal foot point of `origin` on the curved surface, found by
+    // a multivariate Newton iteration on the orthogonality criterion
+    //   g1 = u + P*P_u = 0,  g2 = v + P*P_v = 0   (in the local orthonormal frame).
+    // Falls back to the vertical projection positionAt(0,0) if Newton fails to
+    // converge, hits a singular Jacobian, or wanders out of the sample region.
+    [[nodiscard]] glm::vec3 projectOrthogonal() const;
+
     // 2D axis-aligned bounds of the stored sample params
     void paramBounds(glm::vec2& outMin, glm::vec2& outMax) const;
 };

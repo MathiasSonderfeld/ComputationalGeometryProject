@@ -509,7 +509,7 @@ void CgPointCloud::setVertexPosition(const int index, const glm::vec3& position)
     rebuildSpatialStructures();
 }
 
-void CgPointCloud::smoothAllMLS(const int degree) {
+void CgPointCloud::smoothAllMLS(const int degree, const bool useNewton) {
     const int n = static_cast<int>(m_vertices.size());
     if (n == 0)
         return;
@@ -519,9 +519,10 @@ void CgPointCloud::smoothAllMLS(const int degree) {
     std::vector<glm::vec3> newPositions(n);
     for (int i = 0; i < n; ++i) {
         const CgMlsSurface surface = mlsSurfaceAt(i, degree);
-        // the vertex sits at (u,v) = (0,0) in its own frame, so its smoothed
-        // height is P(0,0); positionAt lifts that back to world space
-        newPositions[i] = surface.positionAt(0.0f, 0.0f);
+        // vertical projection: the vertex sits at (u,v)=(0,0) in its own frame, so
+        // its smoothed height is P(0,0). Newton instead finds the true foot point.
+        newPositions[i] = useNewton ? surface.projectOrthogonal()
+                                    : surface.positionAt(0.0f, 0.0f);
     }
 
     m_vertices = std::move(newPositions);

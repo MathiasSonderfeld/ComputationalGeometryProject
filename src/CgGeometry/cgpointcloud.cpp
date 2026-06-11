@@ -88,7 +88,7 @@ const glm::vec3 CgPointCloud::getClosestPoint(const glm::vec3 &origin, const glm
         return glm::vec3(0.0f);
 
     // highlight k nearest neighbors of the selected point in red
-    for (int idx: m_kd_tree->knn(closestIdx, m_k))
+    for (const int idx: m_kd_tree->knn(closestIdx, m_k))
         m_vertex_colors[idx] = glm::vec3(1.0f, 0.0f, 0.0f);
 
     return m_vertices[closestIdx];
@@ -201,7 +201,7 @@ void CgPointCloud::orientNormals() {
     }
 }
 
-std::vector<int> CgPointCloud::kNearestNeighboursSimple(const glm::vec3 &queryPoint, int k) const {
+std::vector<int> CgPointCloud::kNearestNeighboursSimple(const glm::vec3 &queryPoint, const int k) const {
     // max-heap: (squared_distance, index) — der bisher weiteste Kandidat liegt oben
     std::priority_queue<std::pair<float, int> > queue;
 
@@ -223,7 +223,7 @@ std::vector<int> CgPointCloud::kNearestNeighboursSimple(const glm::vec3 &queryPo
     return result;
 }
 
-CgTriangleMesh *CgPointCloud::generateSplatMesh(const float radius, int segments) const {
+CgTriangleMesh *CgPointCloud::generateSplatMesh(const float radius, const int segments) const {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> norms;
     std::vector<unsigned int> idx;
@@ -293,7 +293,7 @@ static glm::vec3 distinctColor(const int index) {
     return hsvToRgb(std::fmod(static_cast<float>(index) * golden_ratio, 1.0f), 0.85f, 0.95f);
 }
 
-std::vector<std::vector<int>> CgPointCloud::regionGrowing(float maxAngleDeg, int minClusterSize) const {
+std::vector<std::vector<int>> CgPointCloud::regionGrowing(const float maxAngleDeg, const int minClusterSize) const {
     const int n = static_cast<int>(m_vertices.size());
     if (n == 0)
         return {};
@@ -456,8 +456,8 @@ std::vector<std::vector<CgPointList*>> CgPointCloud::generateSplitPlaneLines() c
     const auto rects = m_kd_tree->getSplitPlaneRects(m_aabb);
 
     int maxDepth = 0;
-    for (const auto& rect : rects)
-        maxDepth = std::max(maxDepth, rect.depth);
+    for (const auto& [corners, depth] : rects)
+        maxDepth = std::max(maxDepth, depth);
 
     // one CgPointList per individual split plane, each with its own distinct
     // color. planes are grouped by depth (outer index) so the caller can

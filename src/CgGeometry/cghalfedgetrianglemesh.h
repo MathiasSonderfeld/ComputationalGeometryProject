@@ -27,18 +27,18 @@ public:
     ~CgHalfEdgeTriangleMesh() override;
 
     //inherited from CgBaseRenderableObject
-    ObjectType getType() const override;
-    unsigned int getID() const override;
-    glm::vec3 getColor() const override;
+    [[nodiscard]] ObjectType getType() const override;
+    [[nodiscard]] unsigned int getID() const override;
+    [[nodiscard]] glm::vec3 getColor() const override;
 
     
     //inherited from CgBaseHalfEdgeTriangleMesh
 
-    const std::vector<CgBaseHeFace*>& getFaces() const override;
-    const std::vector<CgBaseHeVert*>& getVertices() const override;
+    [[nodiscard]] const std::vector<CgBaseHeFace*>& getFaces() const override;
+    [[nodiscard]] const std::vector<CgBaseHeVert*>& getVertices() const override;
 
     //own stuff
-    glm::vec3 getCenter() const;
+    [[nodiscard]] glm::vec3 getCenter() const;
 
     void consistencyCheck() const;
     void subdivide();
@@ -46,19 +46,20 @@ public:
     // index of the vertex whose position is closest to the picking line, or -1
     int getClosestVertex(const glm::vec3& origin, const glm::vec3& dir, double maxDistance) const;
 
-    // vertices reachable from `index` over at most two edges (the 2-ring)
-    std::vector<int> twoRingNeighbours(int index) const;
+    // vertices reachable from `index` over at most two edges (the 2-ring),
+    // collected by local half-edge traversal around the fan
+    [[nodiscard]] std::vector<CgHeVert*> twoRingNeighbours(int index) const;
 
     // Moving Least Squares fit at vertex `index` over its 2-ring neighbourhood
     // (the vertex itself is included as a sample)
-    CgMlsSurface mlsSurfaceAt(int index, int degree) const;
+    [[nodiscard]] CgMlsSurface mlsSurfaceAt(int index, int degree) const;
 
     // move a single vertex onto a position and refresh the vertex normals
-    void setVertexPosition(int index, const glm::vec3& position);
+    void setVertexPosition(int index, const glm::vec3& position) const;
 
     // MLS-smooth every vertex at once (double-buffered: old positions feed all
     // fits, new positions committed together, then normals recomputed)
-    void smoothAllMLS(int degree);
+    void smoothAllMLS(int degree) const;
 
     static glm::vec3 calculateNewVerticePosition(CgHeVert *vertex);
 
@@ -70,8 +71,9 @@ private:
     void calculateNormals() const;
     static glm::vec3 calculateVertexNormal(const CgBaseHeVert* vertex);
 
-    // vertex adjacency derived from the triangle faces (boundary-proof)
-    std::vector<std::vector<int>> buildVertexAdjacency() const;
+    // the 1-ring of a vertex: the fan of directly connected vertices, found by
+    // rotating over the outgoing half-edges (boundary-safe, walks both ways)
+    static std::vector<CgHeVert*> oneRingNeighbours(const CgHeVert* vertex) ;
 
     std::vector<CgBaseHeFace*> m_faces;
     std::vector<CgBaseHeVert*> m_vertices;

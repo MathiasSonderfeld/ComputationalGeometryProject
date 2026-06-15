@@ -48,7 +48,7 @@ CgHeVert* CgHalfEdgeTriangleMesh::createVertex(const int index, const std::vecto
     if (halfEdgeVertices[index] == nullptr) {
         halfEdgeVertices[index] = new CgHeVert();
         halfEdgeVertices[index]->setIndex(index);
-        halfEdgeVertices[index]->setColor(glm::vec3(1, 0, 0));
+        halfEdgeVertices[index]->setColor(glm::vec3(0, 1, 0));
         halfEdgeVertices[index]->setPosition(vertices[index]);
         this->m_vertices.push_back(halfEdgeVertices[index]);
     }
